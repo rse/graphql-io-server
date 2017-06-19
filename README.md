@@ -43,20 +43,29 @@ $ npm install graphql-io-server
 Usage
 -----
 
+Simple "Hello World":
+
 ```js
-import { Server } from "graphql-io-server"
-
-const sv = new Server({
-    url:        "http://127.0.0.1:12345/api",
-    path:       { graph: "" },
-    debugWrite: (msg) => { console.error(msg) },
-    debugLevel: 2
-})
-
-(async () => {
-    ...FIXME...
-)()
+const { Client } = require("graphql-io-client")
+;(async () => {
+    const sv = new Client()
+    await sv.connect()
+    let result = await sv.query("{ hello }")
+    console.log(result.data)
+    await sv.disconnect()
+})()
 ```
+
+Complex Example:
+
+```js
+...FIXME...
+```
+
+Application Programming Interface (API)
+---------------------------------------
+
+See the [TypeScript type definition of the GraphQL-IO-Client API](src/graphql-io.d.ts) for details.
 
 License
 -------

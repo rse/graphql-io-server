@@ -27,6 +27,7 @@ module.exports = function (grunt) {
     grunt.loadNpmTasks("grunt-contrib-clean")
     grunt.loadNpmTasks("grunt-eslint")
     grunt.loadNpmTasks("grunt-babel")
+    grunt.loadNpmTasks("grunt-tslint")
     grunt.initConfig({
         eslint: {
             options: {
@@ -34,6 +35,14 @@ module.exports = function (grunt) {
             },
             "gruntfile": [ "Gruntfile.js" ],
             "graphql-io-server": [ "src/**/*.js" ]
+        },
+        tslint: {
+            "graphql-io-server": {
+                options: {
+                    configuration: "tslint.json"
+                },
+                src: "./src/graphql-io.d.ts"
+            }
         },
         babel: {
             "graphql-io-server": {
@@ -74,6 +83,6 @@ module.exports = function (grunt) {
             distclean: [ "node_modules" ]
         }
     })
-    grunt.registerTask("default", [ "eslint", "babel" ])
+    grunt.registerTask("default", [ "eslint", "tslint", "babel" ])
 }
 

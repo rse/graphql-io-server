@@ -25,13 +25,11 @@
 /*  external dependencies  */
 import Latching          from "latching"
 import EventEmitter      from "eventemitter3"
-import Optioner          from "optioner"
-import Joi               from "joi"
+import UUID              from "pure-uuid"
+import Ducky             from "ducky"
 
 /*
 import Axios             from "axios"
-import UUID              from "pure-uuid"
-import Ducky             from "ducky"
 import * as GraphQL      from "graphql"
 import * as GraphQLTools from "graphql-tools"
 import GraphQLSequelize  from "graphql-tools-sequelize"
@@ -59,50 +57,58 @@ export default class Server extends EventEmitter {
         })
 
         /*  determine options  */
-        let optioner = Optioner({
-            url:         Joi.string().regex(/^https?:\/\/.+?:\d+\/.*$/).default("http://127.0.0.1:8080/api"),
+        this._.options = Ducky.options({
+            url:         [ "/^https?:\\/\\/.+?:\\d+\\/.*$/", "http://127.0.0.1:8080/api" ],
             path: {
-                login:   Joi.string().empty().allow("").regex(/^(?:|\/.+)$/).default("/auth/login"),
-                session: Joi.string().empty().allow("").regex(/^(?:|\/.+)$/).default("/auth/session"),
-                logout:  Joi.string().empty().allow("").regex(/^(?:|\/.+)$/).default("/auth/logout"),
-                graph:   Joi.string().empty().allow("").regex(/^(?:|\/.+)$/).default("/data/graph"),
-                blob:    Joi.string().empty().allow("").regex(/^(?:|\/.+)$/).default("/data/blob")
+                login:   [ "/^(?:|\\/.+)$/", "/auth/login" ],
+                session: [ "/^(?:|\\/.+)$/", "/auth/session" ],
+                logout:  [ "/^(?:|\\/.+)$/", "/auth/logout" ],
+                graph:   [ "/^(?:|\\/.+)$/", "/data/graph" ],
+                blob:    [ "/^(?:|\\/.+)$/", "/data/blob" ]
             },
-            encoding:    Joi.string().regex(/^(?:cbor|msgpack|json)$/).default("json"),
-            debug:       Joi.number().integer().min(0).max(3).default(0)
-        })
-        optioner(options, (err, options) => {
-            if (err)
-                throw new Error(err)
-            this._.options = options
-        })
+            encoding:    [ "/^(?:cbor|msgpack|json)$/", "json" ],
+            debug:       [ "number", 0 ]
+        }, options)
 
         /*  initialize internal state  */
-        this._.xxx = null
+        this._.nsUUID = new UUID(5, "ns:URL", "http://engelschall.com/ns/graphql-io")
+        this._.hapi   = null
 
         /*  provide latching sub-system  */
         this._.latching = new Latching()
     }
 
-    /*  pass-through latching sub-system  */
-    hook    (...args) { return this._.latching.hook(...args) }
-    at      (...args) { return this._.latching.at(...args) }
-    latch   (...args) { return this._.latching.latch(...args) }
-    unlatch (...args) { return this._.latching.unlatch(...args) }
-
-    /*  raise a fatal error  */
+    /*  INTERNAL: raise a fatal error  */
     error (err) {
         this.log(1, `ERROR: ${err}`)
         this.emit("error", err)
+        return this
     }
 
-    /*  raise a debug message  */
+    /*  INTERNAL: raise a debug message  */
     log (level, msg) {
         if (level <= this._.options.debug) {
             let date = (new Date()).toISOString()
             let log = `${date} DEBUG [${level}]: ${msg}`
             this.emit("debug", { date, level, msg, log })
         }
+        return this
+    }
+
+    /*  pass-through latching sub-system  */
+    at (...args) {
+        this._.latching.latch(...args)
+        return this
+    }
+    removeLatching (...args) {
+        this._.latching.unlatch(...args)
+        return this
+    }
+
+    /*  allow reconfiguration  */
+    configure (options) {
+        this._.options.merge(options)
+        return this
     }
 }
 

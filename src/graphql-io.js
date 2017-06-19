@@ -23,7 +23,7 @@
 */
 
 /*  import API classes  */
-import Server       from "./graphql-io-1-server"
+import Server from "./graphql-io-1-server"
 
 /*  export the traditional way for interoperability reasons
     (as Babel would export an object with a 'default' field)  */
