@@ -1,0 +1,7 @@
+{
+    "name":    "graphql-io-server",
+    "main":    "src/graphql-io.d.ts",
+    "browser": "src/graphql-io.d.ts",
+    "dependencies": {
+    }
+}
