@@ -34,7 +34,7 @@ declare module "graphql-io-server" {
                 The default is `"http://127.0.0.1:8080/api"`.  */
             url: string
 
-            /*  The URL path specification.  */
+            /*  The URL path section.  */
             path: {
                 /*  The relative URL path to the login service of the server.
                     Has to match the regex `^(?:|\\/.+)$`.
@@ -61,6 +61,19 @@ declare module "graphql-io-server" {
                     The default is `/data/blob`.  */
                 blob: string
             }
+
+            /*  The Transport Layer Security (TLS) section.  */
+            tls: {
+                /*  The TLS certificate file in PEM format.  */
+                crt: string,
+
+                /*  The TLS private key file in PEM format.  */
+                key: string
+            },
+
+            /*  The internal secret for JSON Web Token (JWT) generation.
+                The default is an auto-generated secret which changes on every service start.  */
+            secret: string,
 
             /*  The optional path to a HTML5 SPA based User Interface (UI) frontend application
                 which should be statically served to the client under the base URL.  */
