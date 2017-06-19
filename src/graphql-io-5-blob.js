@@ -22,12 +22,18 @@
 **  SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-/*  import API classes  */
-import Server from "./graphql-io-1-server"
-
-/*  export the traditional way for interoperability reasons
-    (as Babel would export an object with a 'default' field)  */
-module.exports = {
-    Server
+export default class BLOB {
+    static setup () {
+        /*  optional delivery of BLOB data  */
+        if (this._.options.frontend !== "") {
+            this._.server.route({
+                method: "GET",
+                path: `${this._.options.path.blob}/{path*}`,
+                handler: () => {
+                    /* FIXME */
+                }
+            })
+        }
+    }
 }
 

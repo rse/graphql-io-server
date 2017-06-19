@@ -22,12 +22,24 @@
 **  SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-/*  import API classes  */
-import Server from "./graphql-io-1-server"
+export default class UI {
+    static setup () {
+        /*  optional static delivery of the frontend UI files  */
+        if (this._.options.frontend !== "") {
+            this._.server.route({
+                method: "GET",
+                path: "/{path*}",
+                handler: {
+                    directory: {
+                        path:  this._.options.frontend,
+                        index: true,
+                        redirectToSlash: true
+                    }
+                }
+            })
+        }
 
-/*  export the traditional way for interoperability reasons
-    (as Babel would export an object with a 'default' field)  */
-module.exports = {
-    Server
+        /*  GraphiQL  */
+    }
 }
 

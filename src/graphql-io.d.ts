@@ -22,17 +22,17 @@
 **  SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-/*  The GraphQL-IO Client API consists of the primary class Server.  */
+/*  The GraphQL-IO Server API consists of the primary class Server.  */
 declare module "graphql-io-server" {
     /*  The primary API class of GraphQL-IO Server,
      *  representing the network communication server.  */
-    public class Server {
+    class Server {
         /*  Construct a new GraphQL-IO Server instance.  */
         public constructor(options?: {
             /*  The base URL of the server.
                 Has to match the regex `^https?:\/\/.+?:\d+\/.*$`.
                 The default is `"http://127.0.0.1:8080/api"`.  */
-            url: string,
+            url: string
 
             /*  The URL path specification.  */
             path: {
@@ -60,7 +60,11 @@ declare module "graphql-io-server" {
                     Has to match the regex `^(?:|\\/.+)$`.
                     The default is `/data/blob`.  */
                 blob: string
-            },
+            }
+
+            /*  The optional path to a HTML5 SPA based User Interface (UI) frontend application
+                which should be statically served to the client under the base URL.  */
+            frontend: string
 
             /*  The frame encoding for the GraphQL over WebSocket communication.
                 Has to be either `cbor` (maximum performance, binary),
@@ -92,18 +96,18 @@ declare module "graphql-io-server" {
         /*  Remove a previously registered hook latching **handler** under hook **hookName**.  */
         public removeLatching(hookName: string, handler: (...args: any[]) => any): void
 
-        /*  Merge one or more options into the Client configuration.
+        /*  Merge one or more options into the Server configuration.
             This accepts the same **options** as the constructor.
             Should be used before any call to connect().  */
-        public configure(options: object): Client
+        public configure(options: object): Server
 
         /*  Initiate a start of the server.
             This instanciates the internal network connections.  */
-        public start(): Promise<Client>
+        public start(): Promise<Server>
 
         /*  Initiate a stop of the server.
             This drops the internal network connections.  */
-        public stop(): Promise<Client>
+        public stop(): Promise<Server>
     }
 
     const server: Server

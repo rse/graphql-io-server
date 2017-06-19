@@ -22,12 +22,18 @@
 **  SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-/*  import API classes  */
-import Server from "./graphql-io-1-server"
+/*
+import * as GraphQL      from "graphql"
+import * as GraphQLTools from "graphql-tools"
+import GraphQLSubscribe  from "graphql-tools-subscribe"
+import GraphQLTypes      from "graphql-tools-types"
+import HAPIGraphiQL      from "hapi-plugin-graphiql"
+import Boom              from "boom"
+*/
 
-/*  export the traditional way for interoperability reasons
-    (as Babel would export an object with a 'default' field)  */
-module.exports = {
-    Server
+export default class GraphQL {
+    static setup () {
+        /* FIXME */
+    }
 }
 
