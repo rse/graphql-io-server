@@ -46,13 +46,11 @@ Usage
 Simple "Hello World":
 
 ```js
-const { Client } = require("graphql-io-client")
+const { Server } = require("graphql-io-server")
 ;(async () => {
-    const sv = new Client()
-    await sv.connect()
-    let result = await sv.query("{ hello }")
-    console.log(result.data)
-    await sv.disconnect()
+    const sv = new Server()
+    sv.register()
+    await sv.start()
 })()
 ```
 
