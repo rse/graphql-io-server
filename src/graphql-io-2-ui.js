@@ -38,7 +38,12 @@ export default class UI {
                     directory: {
                         path:  this._.options.frontend,
                         index: true,
-                        redirectToSlash: true
+                        listing: false,
+                        showHidden: false,
+                        redirectToSlash: true,
+                        etagMethod: "hash",
+                        lookupCompressed: true,
+                        lookupMap: { "gzip": ".gz", "br": ".br" }
                     }
                 }
             })
