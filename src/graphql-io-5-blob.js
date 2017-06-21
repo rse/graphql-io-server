@@ -34,7 +34,8 @@ export default class BLOB {
                 method: "GET",
                 path: `${this._.options.path.blob}/{path*}`,
                 handler: (request, reply) => {
-                    let { path, filename, type, content } = this._.latching.hook("blob", request.params.path)
+                    let { path, filename, type, content } =
+                        this._.latching.hook("blob", request.params.path, request)
                     if (path !== null) {
                         /*  stream content from filesystem  */
                         let response = reply.file(path, {
