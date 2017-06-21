@@ -20,7 +20,7 @@
     "homepage": "https://github.com/rse/graphql-io-server",
     "bugs":     "https://github.com/rse/graphql-io-server/issues",
     "dependencies": {
-        "graphql":                        "~0.10.1",
+        "graphql":                        "~0.10.3",
         "graphql-tools":                  "~1.0.0",
         "graphql-tools-sequelize":        "~1.3.3",
         "graphql-tools-subscribe":        "~0.9.7",

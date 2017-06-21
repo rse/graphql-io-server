@@ -57,7 +57,70 @@ const { Server } = require("graphql-io-server")
 Complex Example:
 
 ```js
-...FIXME...
+import pbkdf2 from "pbkdf2-utils"
+sv.at("account-for-username-password", async (ctx) => {
+    let account = null
+    if (   typeof ctx.username === "string" && ctx.username !== ""
+        && typeof ctx.password === "string") {
+        account = await dm.Account.findOne({ where: { "username": ctx.username } })
+        if (account === null) {
+            ctx.error = "no such account"
+            return
+        }
+        let buf = new Buffer(account.password, "hex")
+        let valid = await pbkdf2.verify(password, buf)
+        if (!valid) {
+            ctx.error = "invalid password"
+            return
+        }
+    }
+    else {
+        account = await dm.Account.findOne({ where: { "username": "anonymous" } })
+        if (account === null) {
+            ctx.error = "account \"anonymous\" not found"
+            return
+        }
+    }
+    ctx.accountId = account.id
+})
+sv.at("session-create", async (ctx) => {
+    ctx.sessionId = (new UUID(1)).format()
+    let session = dm.Session.build({
+        id: ctx.sessionId,
+        expiresOn: Date.now() + ctx.ttl
+    })
+    await session.save()
+    await session.setAccount(ctx.accountId)
+})
+sv.at("session-details", async (ctx) => {
+   if (typeof ctx.sessionId === "string") {
+        let session = await dm.Session.findById(ctx.sessionId)
+        if (session !== null && Date.now() >= session.expiresOn) {
+            await session.destroy()
+            session = null
+        }
+        if (session === null)
+            ctx.sessionId = null
+    }
+    if (typeof ctx.accountId === "string") {
+        let account = await dm.Account.findById(ctx.accountId)
+        if (account === null)
+            ctx.accountId = null
+    }
+})
+sv.at("session-destroy", async (ctx) => {
+    let session = await dm.Session.findById(ctx.sessionId)
+    if (session !== null)
+        await session.destroy()
+})
+let job = schedule.scheduleJob("0 */30 * * * *", () => {
+    let sessions = await dm.Session.findAll({
+        where: { expiresOn: { $lte: Date.now() } }
+    })
+    sessions.forEach(async (session) => {
+        await session.destroy()
+    })
+})
 ```
 
 Application Programming Interface (API)

@@ -81,6 +81,7 @@ export default class Server extends EventEmitter {
                 key:     [ "string", "" ]
             },
             secret:      [ "string", generatePassword.generate({ length: 16, numbers: true }) ],
+            ttl:         7 * 24 * 60 * 60 * 1000,
             frontend:    [ "string", "" ],
             encoding:    [ "/^(?:cbor|msgpack|json)$/", "json" ],
             debug:       [ "number", 0 ]
@@ -147,11 +148,11 @@ export default class Server extends EventEmitter {
             listener.address = function () { return this._server.address() }
 
         /*  configure the listening socket  */
-        let url = URI.parse(this._.options.url)
+        this._.url = URI.parse(this._.options.url)
         let hapiOpts = {
             listener: listener,
-            address:  url.host,
-            port:     url.port
+            address:  this._.url.host,
+            port:     this._.url.port
         }
         if (withTLS)
             hapiOpts.tls = true
@@ -239,17 +240,17 @@ export default class Server extends EventEmitter {
 
         /*  display network interaction information  */
         const displayListenHint = ([ scheme, proto ]) => {
-            let uri = `${scheme}://${url.host}:${url.port}`
-            this._log(2, `listen on ${uri} (${proto})`)
+            let url = `${scheme}://${this._.url.host}:${this._.url.port}`
+            this._log(2, `listen on ${url} (${proto})`)
         }
         displayListenHint(withTLS ? [ "https", "HTTP/{1.0,1.1,2.0} + SSL/TLS" ] : [ "http",  "HTTP/{1.0,1.1}" ])
         displayListenHint(withTLS ? [ "wss",   "WebSockets + SSL/TLS" ]         : [ "ws",    "WebSockets" ])
 
         /*  setup services  */
-        UI.setup.call(this)
-        Auth.setup.call(this)
-        GraphQL.setup.call(this)
-        BLOB.setup.call(this)
+        UI.start.call(this)
+        Auth.start.call(this)
+        GraphQL.start.call(this)
+        BLOB.start.call(this)
 
         /*  start the HAPI service  */
         return new Promise((resolve, reject) => {
@@ -272,6 +273,11 @@ export default class Server extends EventEmitter {
         return new Promise((resolve /*, reject */) => {
             this._log(2, "gracefully stopping HAPI service")
             this._.server.root.stop({ timeout: 4 * 1000 }, () => {
+                /*  teardown services  */
+                UI.stop.call(this)
+                Auth.stop.call(this)
+                GraphQL.stop.call(this)
+                BLOB.stop.call(this)
                 this._.server = null
                 resolve()
             })

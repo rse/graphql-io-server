@@ -23,7 +23,7 @@
 */
 
 export default class UI {
-    static setup () {
+    static start () {
         /*  optional static delivery of the frontend UI files  */
         if (this._.options.frontend !== "") {
             this._.server.route({
