@@ -23,7 +23,6 @@
 */
 
 /*  external requirements  */
-import path         from "path"
 import HAPIGraphiQL from "hapi-plugin-graphiql"
 
 /*  static delivery of User Interfaces  */
