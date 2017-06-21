@@ -121,6 +121,28 @@ let job = schedule.scheduleJob("0 */30 * * * *", () => {
         await session.destroy()
     })
 })
+sv.at("graphql-schema", () => {
+    return `
+        #   The persons belonging to **OrgUnit**s.
+        type Person {
+            #   Unique identifier of a person.
+            id: ID!
+            #   Name of a person.
+            name: String
+            #   **OrgUnit** this person belongs to.
+            belongsTo: OrgUnit
+            #   **Person** this person is supervised by.
+            supervisor: Person
+        }
+    `
+})
+sv.at("graphql-resolver", () => {
+    return {
+        Person: {
+            ...
+        }
+    }
+})
 sv.at("graphql-transaction", async (ctx) => {
     return (cb) => {
         /*  wrap GraphQL operation into a database transaction  */
