@@ -23,7 +23,7 @@
 */
 
 export default class BLOB {
-    static setup () {
+    static start () {
         /*  optional delivery of BLOB data  */
         if (this._.options.frontend !== "") {
             this._.server.route({
@@ -34,6 +34,9 @@ export default class BLOB {
                 }
             })
         }
+    }
+    static stop () {
+        /* FIXME */
     }
 }
 

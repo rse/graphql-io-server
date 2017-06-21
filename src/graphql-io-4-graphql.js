@@ -32,7 +32,10 @@ import Boom              from "boom"
 */
 
 export default class GraphQL {
-    static setup () {
+    static start () {
+        /* FIXME */
+    }
+    static stop () {
         /* FIXME */
     }
 }

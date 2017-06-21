@@ -89,4 +89,7 @@ export default class UI {
             })
         }
     }
+    static stop () {
+    }
 }
+
