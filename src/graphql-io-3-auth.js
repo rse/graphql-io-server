@@ -31,7 +31,7 @@ export default class Auth {
         /*  provide login endpoint  */
         this._.server.route({
             method: "POST",
-            path:   this._.options.path.login,
+            path:   `${this._.url.path}${this._.options.path.login}`,
             config: {
                 auth:     false,
                 payload:  { output: "data", parse: true, allow: "application/json" },
@@ -83,7 +83,7 @@ export default class Auth {
         /*  provide session detail gathering endpoint  */
         this._.server.route({
             method: "GET",
-            path:   this._.options.path.session,
+            path:   `${this._.url.path}${this._.options.path.session}`,
             config: {
                 auth: { mode: "try", strategy: "jwt" }
             },
@@ -110,7 +110,7 @@ export default class Auth {
         /*  provide logout endpoint  */
         this._.server.route({
             method: "GET",
-            path:   this._.options.path.logout,
+            path:   `${this._.url.path}${this._.options.path.logout}`,
             config: {
                 auth: false
             },
