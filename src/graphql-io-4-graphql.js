@@ -22,18 +22,221 @@
 **  SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-/*
-import * as GraphQL      from "graphql"
+/*  external requirements  */
 import * as GraphQLTools from "graphql-tools"
-import GraphQLSubscribe  from "graphql-tools-subscribe"
 import GraphQLTypes      from "graphql-tools-types"
-import HAPIGraphiQL      from "hapi-plugin-graphiql"
+import GraphQLSubscribe  from "graphql-tools-subscribe"
 import Boom              from "boom"
-*/
 
+/*  the GraphQL functionality  */
 export default class GraphQL {
     static start () {
-        /* FIXME */
+        /*  start with a mininum GraphQL schema and resolver  */
+        let schema = `
+            schema {
+                query:    Root
+                mutation: Root
+            }
+            type Root {
+            }
+        `
+        let resolver = {
+            Root: {}
+        }
+
+        /*  let application extend GraphQL schema and resolver  */
+        const mixinSchema = (type, value) => {
+            if (type === "root")
+                schema += "\n" + value
+            else {
+                let re = new RegExp(`(\\stype\\s+${type}\\s*(?:implements\\s+\\S+)?\\s*\\{(?:.|\\r?\\n)*?)(\\})`)
+                let m = schema.match(re)
+                if (m === null)
+                    throw new Error(`schema for ${type} not found`)
+                schema = schema.replace(re, `$1${value}$2`)
+            }
+        }
+        const mixinResolver = (type, attr, value) => {
+            if (type === "root") {
+                if (resolver[attr] !== undefined)
+                    throw new Error(`resolver for <root>.${attr} already exists`)
+                resolver[attr] = value
+            }
+            else {
+                if (resolver[type] === undefined)
+                    resolver[type] = {}
+                if (resolver[type][attr] !== undefined)
+                    throw new Error(`resolver for ${type}.${attr} already exists`)
+                resolver[type][attr] = value
+            }
+        }
+        let apiSchema   = this._.latching.hook("graphql-schema",   "append")
+        let apiResolver = this._.latching.hook("graphql-resolver", "concat")
+        schema += apiSchema
+        apiResolver.forEach((api) => {
+            Object.keys(api).forEach((type) => {
+                Object.keys(api[type]).forEach((attr) => {
+                    if (typeof api[type][attr] === "string")
+                        mixinSchema(type, api[type][attr])
+                    else if (typeof api[type][attr] === "function")
+                        mixinResolver(type, attr, api[type][attr])
+                    else if (typeof api[type][attr] === "object" && api[type][attr] instanceof Array) {
+                        let [ d, r ] = api[type][attr]
+                        mixinSchema(type, d)
+                        mixinResolver(type, attr, r)
+                    }
+                })
+            })
+        })
+
+        /*  mixin standard add-on GraphQL schema types and resolver  */
+        mixinSchema("root", "scalar JSON")
+        mixinSchema("root", "scalar UUID")
+        mixinSchema("root", "scalar Void")
+        mixinResolver("root", "JSON", GraphQLTypes.JSON({ name: "JSON" }))
+        mixinResolver("root", "UUID", GraphQLTypes.UUID({ name: "UUID", storage: "string" }))
+        mixinResolver("root", "Void", GraphQLTypes.Void({ name: "Void" }))
+
+        /*  bootstrap GraphQL subscription framework  */
+        let sub = new GraphQLSubscribe({
+            pubsub: this._.options.pubsub,
+            keyval: this._.options.keval
+        })
+
+        /*  mixin GraphQL subscription into schema and resolver  */
+        mixinSchema("Root",         sub.schemaSubscription())
+        mixinSchema("root",         "type Subscription {}")
+        mixinSchema("Subscription", sub.schemaSubscriptions())
+        mixinSchema("Subscription", sub.schemaSubscribe())
+        mixinSchema("Subscription", sub.schemaUnsubscribe())
+        mixinSchema("Subscription", sub.schemaPause())
+        mixinSchema("Subscription", sub.schemaResume())
+        mixinResolver("Root",         "Subscription",  sub.resolverSubscription())
+        mixinResolver("Subscription", "subscriptions", sub.resolverSubscriptions())
+        mixinResolver("Subscription", "subscribe",     sub.resolverSubscribe())
+        mixinResolver("Subscription", "unsubscribe",   sub.resolverUnsubscribe())
+        mixinResolver("Subscription", "pause",         sub.resolverPause())
+        mixinResolver("Subscription", "resume",        sub.resolverResume())
+
+        /*  generate GraphQL schema  */
+        let schemaExec = GraphQLTools.makeExecutableSchema({
+            typeDefs:  [ schema ],
+            resolvers: resolver,
+            logger: { log: (err) => { this._log(2, `GraphQL: ERROR: ${err}`) } },
+            allowUndefinedInResolve: false,
+            resolverValidationOptions: {
+                requireResolversForArgs:      true,
+                requireResolversForNonScalar: true,
+                requireResolversForAllFields: false
+            }
+        })
+
+        /*  establish the HAPI route for GraphQL  */
+        let endpointMethod = "POST"
+        let endpointURL    = `${this._.url.path}${this._.options.path.graph}`
+        this._.server.route({
+            method: endpointMethod,
+            path:   endpointURL,
+            config: {
+                auth:    { mode: "required", strategy: "jwt" },
+                payload: { output: "data", parse: true, allow: "application/json" },
+                plugins: {
+                    websocket: {
+                        only: false,
+                        frameEncoding: "cbor",
+                        frameRequest:  "GRAPHQL-REQUEST",
+                        frameResponse: "GRAPHQL-RESPONSE",
+
+                        /*  on WebSocket connection, establish subscription connection  */
+                        connect: ({ ctx, ws, wsf, req }) => {
+                            let peer = this._.server.peer(req)
+                            let cid = `${peer.addr}:${peer.port}`
+                            let proto = `WebSocket/${ws.protocolVersion}+HTTP/${req.httpVersion}`
+                            this._log(1, `connect: peer=${cid}, method=${endpointMethod}, ` +
+                                `url=${endpointURL}, protocol=${proto}`)
+                            ctx.conn = sub.connection(cid, (sids) => {
+                                /*  send notification message about outdated subscriptions  */
+                                this._log(2, `sending GraphQL notification for SID(s): ${sids.join(", ")}`)
+                                try { wsf.send({ type: "GRAPHQL-NOTIFY", data: sids }) }
+                                catch (ex) { void (ex) }
+                            })
+                        },
+
+                        /*  on WebSocket disconnection, destroy subscription connection  */
+                        disconnect: ({ ctx, ws, req }) => {
+                            let peer = this._.server.peer(req)
+                            let cid = `${peer.addr}:${peer.port}`
+                            let proto = `WebSocket/${ws.protocolVersion}+HTTP/${req.httpVersion}`
+                            this._log(1, `disconnect: peer=${cid}, method=${endpointMethod}, ` +
+                                `url=${endpointURL}, protocol=${proto}`)
+                            ctx.conn.destroy()
+                        }
+                    },
+                    ducky: `{
+                        query: string,
+                        variables?: (object|string),
+                        operationName?: (object|string)
+                    }`
+                }
+            },
+            handler: (request, reply) => {
+                /*  determine optional WebSocket information  */
+                let ws = request.websocket()
+
+                /*  short-circuit handler processing of initial WebSocket message
+                    (instead we just want the authentication to be done by HAPI)  */
+                if (ws.initially)
+                    return reply().code(204)
+
+                /*  determine request  */
+                if (typeof request.payload !== "object" || request.payload === null)
+                    return reply(Boom.badRequest("invalid request"))
+                let query     = request.payload.query
+                let variables = request.payload.variables
+                let operation = request.payload.operationName
+
+                /*  support special case of GraphiQL  */
+                if (typeof variables === "string")
+                    variables = JSON.parse(variables)
+                if (typeof operation === "object" && operation !== null)
+                    return reply(Boom.badRequest("invalid request"))
+
+                /*  determine session information  */
+                let { sessionId, accountId } = request.auth.credentials
+
+                /*  create a scope for tracing GraphQL operations over WebSockets  */
+                let scope = ws.mode === "websocket" ? ws.ctx.conn.scope(query) : null
+
+                /*  allow application to wrap execution into a (database) transaction  */
+                let transaction = this._.latching.hook("graphql-transaction", "none")
+                if (!transaction) {
+                    transaction = (cb) => {
+                        return new Promise((resolve, reject) => {
+                            resolve(cb(null))
+                        })
+                    }
+                }
+
+                /*  execute GraphQL operation within a transaction  */
+                return transaction((tx) => {
+                    /*  create context for GraphQL resolver functions  */
+                    let ctx = { tx, scope, sessionId, accountId }
+
+                    /*  execute the GraphQL query against the GraphQL schema  */
+                    return GraphQL.graphql(schemaExec, query, null, ctx, variables, operation)
+                }).then((result) => {
+                    /*  success/commit  */
+                    if (scope)
+                        scope.commit()
+                    reply(result).code(200)
+                }).catch((result) => {
+                    /*  error/rollback  */
+                    if (scope)
+                        scope.reject()
+                    reply(result)
+                })
+            }
+        })
     }
     static stop () {
         /* FIXME */

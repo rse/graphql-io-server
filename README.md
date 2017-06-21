@@ -121,6 +121,19 @@ let job = schedule.scheduleJob("0 */30 * * * *", () => {
         await session.destroy()
     })
 })
+sv.at("graphql-transaction", async (ctx) => {
+    return (cb) => {
+        /*  wrap GraphQL operation into a database transaction  */
+        return db.transaction({
+            autocommit:     false,
+            deferrable:     true,
+            type:           db.Transaction.TYPES.DEFERRED,
+            isolationLevel: db.Transaction.ISOLATION_LEVELS.SERIALIZABLE
+        }, (tx) => {
+            cb(tx)
+        })
+    }
+})
 ```
 
 Application Programming Interface (API)
