@@ -58,6 +58,7 @@ rules:
     #   disabled rules
     no-multi-spaces:                     off
     no-multiple-empty-lines:             off
+    no-unneeded-ternary:                 off
     key-spacing:                         off
     object-property-newline:             off
     curly:                               off

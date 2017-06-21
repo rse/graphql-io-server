@@ -22,6 +22,10 @@
 **  SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
+/*  external requirements  */
+import Boom from "boom"
+
+/*  the Binary Large OBject (BLOB) delivery  */
 export default class BLOB {
     static start () {
         /*  optional delivery of BLOB data  */
@@ -29,8 +33,26 @@ export default class BLOB {
             this._.server.route({
                 method: "GET",
                 path: `${this._.options.path.blob}/{path*}`,
-                handler: () => {
-                    /* FIXME */
+                handler: (request, reply) => {
+                    let { path, filename, type, content } = this._.latching.hook("blob", request.params.path)
+                    if (path !== null)
+                        /*  stream content from filesystem  */
+                        return reply.file(path, {
+                            confine:  false,
+                            filename: filename ? filename : path,
+                            mode:     "attachment"
+                        }).code(200)
+                    else if (content !== null) {
+                        /*  send content from memory  */
+                        let response = reply(content).code(200)
+                        response.type(type ? type : "application/octet-stream")
+                        if (filename)
+                            response.header("content-disposition",
+                                "attachment; filename=" + encodeURIComponent(filename))
+                        return response
+                    }
+                    else
+                        reply(Boom.internal("neither path nor content given by application"))
                 }
             })
         }
