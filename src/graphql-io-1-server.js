@@ -83,6 +83,7 @@ export default class Server extends EventEmitter {
             secret:      [ "string", generatePassword.generate({ length: 16, numbers: true }) ],
             ttl:         7 * 24 * 60 * 60 * 1000,
             frontend:    [ "string", "" ],
+            graphiql:    [ "boolean", true ],
             encoding:    [ "/^(?:cbor|msgpack|json)$/", "json" ],
             debug:       [ "number", 0 ]
         }, options)

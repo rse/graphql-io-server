@@ -22,9 +22,15 @@
 **  SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
+/*  external requirements  */
+import path         from "path"
+import HAPIGraphiQL from "hapi-plugin-graphiql"
+
+/*  static delivery of User Interfaces  */
 export default class UI {
     static start () {
-        /*  optional static delivery of the frontend UI files  */
+        /*  optional static delivery of specific application UI
+            (works at top-level because HAPI route are matched most-specific)  */
         if (this._.options.frontend !== "") {
             this._.server.route({
                 method: "GET",
@@ -39,7 +45,48 @@ export default class UI {
             })
         }
 
-        /*  GraphiQL  */
+        /*  optional static delivery of generic GraphiQL UI
+            (works at same path as GraphQL as it is GET based)  */
+        if (this._.options.graphiql) {
+            this._.server.register({
+                register: HAPIGraphiQL,
+                options: {
+                    graphiqlURL:     this._.url.path,
+                    graphqlFetchURL: `${this._.url.path}${this._.options.path.graph}`,
+                    graphqlFetchOpts: `{
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "Accept":       "application/json"
+                        },
+                        body: JSON.stringify(params),
+                        credentials: "same-origin"
+                    }`,
+                    loginFetchURL: `${this._.url.path}${this._.options.path.login}`,
+                    loginFetchOpts: `{
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({
+                            username: username,
+                            password: password
+                        }),
+                        credentials: "same-origin"
+                    }`,
+                    graphqlExample:
+                        "query Example {\n" +
+                        "    me {\n" +
+                        "        __typename # schema introspection\n" +
+                        "        id\n" +
+                        "        account {\n" +
+                        "            id\n" +
+                        "            username\n" +
+                        "        }\n" +
+                        "    }\n" +
+                        "}\n"
+                }
+            })
+        }
     }
 }
-
