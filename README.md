@@ -49,7 +49,6 @@ Simple "Hello World":
 const { Server } = require("graphql-io-server")
 ;(async () => {
     const sv = new Server()
-    sv.register()
     await sv.start()
 })()
 ```

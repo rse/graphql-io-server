@@ -81,7 +81,7 @@ export default class Server extends EventEmitter {
                 key:     [ "string", "" ]
             },
             secret:      [ "string", generatePassword.generate({ length: 16, numbers: true }) ],
-            ttl:         7 * 24 * 60 * 60 * 1000,
+            ttl:         [ "number", 7 * 24 * 60 * 60 * 1000 ],
             pubsub:      [ "string", "spm" ],
             keyval:      [ "string", "spm" ],
             frontend:    [ "string", "" ],
@@ -98,14 +98,14 @@ export default class Server extends EventEmitter {
     }
 
     /*  INTERNAL: raise a fatal error  */
-    error (err) {
+    _error (err) {
         this.log(1, `ERROR: ${err}`)
         this.emit("error", err)
         return this
     }
 
     /*  INTERNAL: raise a debug message  */
-    log (level, msg) {
+    _log (level, msg) {
         if (level <= this._.options.debug) {
             let date = (new Date()).toISOString()
             let log = `${date} DEBUG [${level}]: ${msg}`
@@ -186,21 +186,18 @@ export default class Server extends EventEmitter {
 
         /*  prepare for JSONWebToken (JWT) authentication  */
         let jwtKey = this._.options.secret
-        server.register(HAPIAuthJWT2, (err) => {
-            if (err)
-                throw new Error(err)
-            server.auth.strategy("jwt", "jwt", {
-                key:           jwtKey,
-                verifyOptions: { algorithms: [ "HS256" ] },
-                urlKey:        "token",
-                cookieKey:     "token",
-                tokenType:     "JWT",
-                validateFunc: (decoded, request, callback) => {
-                    let result = this._.latching.hook("hapi:jwt-validate", "pass",
-                        { error: null, result: true }, decoded, request)
-                    callback(result.error, result.result, decoded)
-                }
-            })
+        await server.register({ register: HAPIAuthJWT2 })
+        server.auth.strategy("jwt", "jwt", {
+            key:           jwtKey,
+            verifyOptions: { algorithms: [ "HS256" ] },
+            urlKey:        "token",
+            cookieKey:     "token",
+            tokenType:     "JWT",
+            validateFunc: (decoded, request, callback) => {
+                let result = this._.latching.hook("hapi:jwt-validate", "pass",
+                    { error: null, result: true }, decoded, request)
+                callback(result.error, result.result, decoded)
+            }
         })
         this._.jwtSign = (data, expires) =>
             JWT.sign(data, jwtKey, { algorithm: "HS256", expiresIn: expires || "365d" })

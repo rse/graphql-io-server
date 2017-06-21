@@ -100,7 +100,7 @@ export default class GraphQL {
         /*  bootstrap GraphQL subscription framework  */
         let sub = new GraphQLSubscribe({
             pubsub: this._.options.pubsub,
-            keyval: this._.options.keval
+            keyval: this._.options.keyval
         })
 
         /*  mixin GraphQL subscription into schema and resolver  */
