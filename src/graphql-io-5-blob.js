@@ -35,16 +35,22 @@ export default class BLOB {
                 path: `${this._.options.path.blob}/{path*}`,
                 handler: (request, reply) => {
                     let { path, filename, type, content } = this._.latching.hook("blob", request.params.path)
-                    if (path !== null)
+                    if (path !== null) {
                         /*  stream content from filesystem  */
-                        return reply.file(path, {
+                        let response = reply.file(path, {
                             confine:  false,
                             filename: filename ? filename : path,
                             mode:     "attachment"
-                        }).code(200)
+                        })
+                        response.code(200)
+                        if (type)
+                            response.type(type)
+                        return response
+                    }
                     else if (content !== null) {
                         /*  send content from memory  */
-                        let response = reply(content).code(200)
+                        let response = reply(content)
+                        response.code(200)
                         response.type(type ? type : "application/octet-stream")
                         if (filename)
                             response.header("content-disposition",

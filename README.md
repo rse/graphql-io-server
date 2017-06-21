@@ -134,6 +134,12 @@ sv.at("graphql-transaction", async (ctx) => {
         })
     }
 })
+sv.at("blob", (name) => {
+    if (name === "foo")
+        return { filename: name, type: "text/plain", content: "foo" }
+    else
+        return { path: path.join(__dirname, name), filename: name }
+})
 ```
 
 Application Programming Interface (API)
