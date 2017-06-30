@@ -6,7 +6,10 @@ const { Server } = require("graphql-io-server")
     sv.on("debug", ({ log }) => console.log(log))
     sv.at("graphql-resolver", () => ({
         Root: {
-            hello: [ `hello: String` , () => "world" ]
+            hello: [
+                `hello(name: String): String`,
+                (obj, args, ctx, info) => args.name ? args.name : "world"
+            ]
         }
     }))
     await sv.start()
