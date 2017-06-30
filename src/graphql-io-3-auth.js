@@ -36,16 +36,25 @@ export default class Auth {
                 auth:     false,
                 payload:  { output: "data", parse: true, allow: "application/json" },
                 plugins: {
-                    ducky: "{ username?: string, password?: string }"
+                    ducky: "{ deviceId: string, username?: string, password?: string }"
                 }
             },
             handler: async (request, reply) => {
                 /*  fetch payload  */
-                let { username, password } = request.payload
+                let { deviceId, username, password } = request.payload
+
+                /*  check device  */
+                let ctx = { error: null, deviceId }
+                await this._.latching.hook("device-for-credentials", "none", ctx)
+                if (ctx.error !== null)
+                    return reply.unauthorized(`failed to authenticate device: ${ctx.error}`)
+                deviceId = ctx.deviceId
+                if (deviceId === null)
+                    deviceId = "unknown"
 
                 /*  check username/password  */
-                let ctx = { error: null, accountId: null, username, password }
-                await this._.latching.hook("account-for-username-password", "none", ctx)
+                ctx = { error: null, accountId: null, username, password }
+                await this._.latching.hook("account-for-credentials", "none", ctx)
                 if (ctx.error !== null)
                     return reply.unauthorized(`failed to authenticate username/password: ${ctx.error}`)
                 let accountId = ctx.accountId
@@ -64,7 +73,8 @@ export default class Auth {
                 /*  issue new token  */
                 let jwt = this._.jwtSign({
                     sessionId: sessionId,
-                    accountId: accountId
+                    accountId: accountId,
+                    deviceId:  deviceId
                 }, "365d")
 
                 /*  send token in payload and cookie  */
@@ -92,17 +102,19 @@ export default class Auth {
                 let ctx = {
                     error: null,
                     sessionId: request.auth.credentials.sessionId,
-                    accountId: request.auth.credentials.accountId
+                    accountId: request.auth.credentials.accountId,
+                    deviceId:  request.auth.credentials.deviceId
                 }
                 await this._.latching.hook("session-details", "none", ctx)
                 if (ctx.error !== null)
                     return reply.unauthorized(`failed to determine session: ${ctx.error}`)
-                let { sessionId, accountId } = ctx
+                let { deviceId, sessionId, accountId } = ctx
 
                 /*  pass-through information  */
                 reply({
                     sessionId: sessionId,
-                    accountId: accountId
+                    accountId: accountId,
+                    deviceId:  deviceId
                 }).code(200)
             }
         })
@@ -139,4 +151,3 @@ export default class Auth {
     static stop () {
     }
 }
-

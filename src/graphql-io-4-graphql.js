@@ -23,13 +23,14 @@
 */
 
 /*  external requirements  */
+import * as GraphQL      from "graphql"
 import * as GraphQLTools from "graphql-tools"
 import GraphQLTypes      from "graphql-tools-types"
 import GraphQLSubscribe  from "graphql-tools-subscribe"
 import Boom              from "boom"
 
 /*  the GraphQL functionality  */
-export default class GraphQL {
+export default class GraphQLService {
     static start () {
         /*  start with a mininum GraphQL schema and resolver  */
         let schema = `
@@ -142,8 +143,11 @@ export default class GraphQL {
                 payload: { output: "data", parse: true, allow: "application/json" },
                 plugins: {
                     websocket: {
-                        only: false,
-                        frameEncoding: "cbor",
+                        only:          false,
+
+                        /*  use framed communication  */
+                        frame:         true,
+                        frameEncoding: this._.options.encoding,
                         frameRequest:  "GRAPHQL-REQUEST",
                         frameResponse: "GRAPHQL-RESPONSE",
 

@@ -33,7 +33,7 @@ export default class UI {
         if (this._.options.frontend !== "") {
             this._.server.route({
                 method: "GET",
-                path: "/{path*}",
+                path: `${this._.url.path}/{path*}`,
                 handler: {
                     directory: {
                         path:  this._.options.frontend,

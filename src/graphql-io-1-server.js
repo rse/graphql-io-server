@@ -153,7 +153,7 @@ export default class Server extends EventEmitter {
         this._.url = URI.parse(this._.options.url)
         let hapiOpts = {
             listener: listener,
-            address:  this._.url.host,
+            address:  this._.url.hostname,
             port:     this._.url.port
         }
         if (withTLS)
@@ -239,7 +239,7 @@ export default class Server extends EventEmitter {
 
         /*  display network interaction information  */
         const displayListenHint = ([ scheme, proto ]) => {
-            let url = `${scheme}://${this._.url.host}:${this._.url.port}`
+            let url = `${scheme}://${this._.url.hostname}:${this._.url.port}`
             this._log(2, `listen on ${url} (${proto})`)
         }
         displayListenHint(withTLS ? [ "https", "HTTP/{1.0,1.1,2.0} + SSL/TLS" ] : [ "http",  "HTTP/{1.0,1.1}" ])
