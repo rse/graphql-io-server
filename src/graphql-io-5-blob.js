@@ -36,29 +36,42 @@ export default class BLOB {
                 config: {
                     auth: { mode: "try", strategy: "jwt" }
                 },
-                handler: (request, reply) => {
-                    let { path, filename, type, content } =
-                        this._.latching.hook("blob", request.params.path, request)
-                    if (path !== null) {
+                handler: async (request, reply) => {
+                    let { peerId, accountId, sessionId } = request.auth.credentials
+                    let ctx = {
+                        error:    null,
+                        path:     request.params.path,
+                        filename: null,
+                        type:     null,
+                        content:  null,
+                        request,
+                        peerId,
+                        accountId,
+                        sessionId
+                    }
+                    await this._.latching.hook("blob", ctx)
+                    if (ctx.error !== null)
+                        return reply.unauthorized(`failed to determine BLOB information: ${ctx.error}`)
+                    if (ctx.path !== null) {
                         /*  stream content from filesystem  */
-                        let response = reply.file(path, {
+                        let response = reply.file(ctx.path, {
                             confine:  false,
-                            filename: filename ? filename : path,
+                            filename: ctx.filename !== null ? ctx.filename : ctx.path,
                             mode:     "attachment"
                         })
                         response.code(200)
-                        if (type)
-                            response.type(type)
+                        if (ctx.type !== null)
+                            response.type(ctx.type)
                         return response
                     }
-                    else if (content !== null) {
+                    else if (ctx.content !== null) {
                         /*  send content from memory  */
-                        let response = reply(content)
+                        let response = reply(ctx.content)
                         response.code(200)
-                        response.type(type ? type : "application/octet-stream")
-                        if (filename)
+                        response.type(ctx.type !== null ? ctx.type : "application/octet-stream")
+                        if (ctx.filename)
                             response.header("content-disposition",
-                                "attachment; filename=" + encodeURIComponent(filename))
+                                "attachment; filename=" + encodeURIComponent(ctx.filename))
                         return response
                     }
                     else
