@@ -41,7 +41,7 @@ export default class Auth {
             },
             handler: async (request, reply) => {
                 /*  fetch payload  */
-                let { deviceId, username, password } = request.payload
+                let { username, password } = request.payload
 
                 /*  recognize peer by id  */
                 let { id: peerId } = request.peer()
@@ -108,7 +108,7 @@ export default class Auth {
                 await this._.latching.hook("session-details", "none", ctx)
                 if (ctx.error !== null)
                     return reply.unauthorized(`failed to determine session: ${ctx.error}`)
-                let { deviceId, sessionId, accountId } = ctx
+                let { peerId, accountId, sessionId } = ctx
 
                 /*  pass-through information  */
                 reply({
