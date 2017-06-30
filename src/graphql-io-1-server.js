@@ -67,6 +67,7 @@ export default class Server extends EventEmitter {
 
         /*  determine options  */
         this._.options = Ducky.options({
+            prefix:      [ "string", "GraphQL-IO-" ],
             name:        [ "string", "GraphQL-IO-Server" ],
             url:         [ "/^https?:\\/\\/.+?:\\d+\\/.*$/", "http://127.0.0.1:8080/api" ],
             path: {
@@ -166,11 +167,20 @@ export default class Server extends EventEmitter {
         await register({ register: HAPIAuth })
         await register({ register: HAPIBoom })
         await register({ register: HAPIDucky })
-        await register({ register: HAPIHeader, options: { Server: this._.options.name } })
+        await register({ register: HAPIHeader, options: {
+            Server: this._.options.name
+        }})
         await register({ register: HAPIWebSocket })
         await register({ register: HAPICo })
         await register({ register: HAPITraffic })
-        await register({ register: HAPIPeer })
+        await register({ register: HAPIPeer, options: {
+            peerId: true,
+            cookieName: `${this._.options.prefix}Peer`,
+            cookieOptions: {
+                path: this._.url.path,
+                isSameSite: "Strict"
+            }
+        }})
 
         /*  provide client IP address  */
         server.ext("onRequest", (request, reply) => {
@@ -190,8 +200,8 @@ export default class Server extends EventEmitter {
         server.auth.strategy("jwt", "jwt", {
             key:           jwtKey,
             verifyOptions: { algorithms: [ "HS256" ] },
-            urlKey:        "token",
-            cookieKey:     "token",
+            urlKey:        `${this._.options.prefix}Token`,
+            cookieKey:     `${this._.options.prefix}Token`,
             tokenType:     "JWT",
             validateFunc: (decoded, request, callback) => {
                 let result = this._.latching.hook("hapi:jwt-validate", "pass",

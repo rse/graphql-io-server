@@ -36,25 +36,24 @@ export default class Auth {
                 auth:     false,
                 payload:  { output: "data", parse: true, allow: "application/json" },
                 plugins: {
-                    ducky: "{ deviceId: string, username?: string, password?: string }"
+                    ducky: "{ username?: string, password?: string }"
                 }
             },
             handler: async (request, reply) => {
                 /*  fetch payload  */
                 let { deviceId, username, password } = request.payload
 
-                /*  check device  */
-                let ctx = { error: null, deviceId }
-                await this._.latching.hook("device-for-credentials", "none", ctx)
+                /*  recognize peer by id  */
+                let { id: peerId } = request.peer()
+                let ctx = { error: null, peerId }
+                await this._.latching.hook("peer-recognize", "none", ctx)
                 if (ctx.error !== null)
-                    return reply.unauthorized(`failed to authenticate device: ${ctx.error}`)
-                deviceId = ctx.deviceId
-                if (deviceId === null)
-                    deviceId = "unknown"
+                    return reply.unauthorized(`failed to handle peer: ${ctx.error}`)
+                peerId = ctx.peerId
 
-                /*  check username/password  */
+                /*  authenticate account via username/password  */
                 ctx = { error: null, accountId: null, username, password }
-                await this._.latching.hook("account-for-credentials", "none", ctx)
+                await this._.latching.hook("account-authenticate", "none", ctx)
                 if (ctx.error !== null)
                     return reply.unauthorized(`failed to authenticate username/password: ${ctx.error}`)
                 let accountId = ctx.accountId
@@ -62,8 +61,8 @@ export default class Auth {
                     accountId = "anonymous"
 
                 /*  create new session  */
-                ctx = { error: null, sessionId: null, accountId, ttl: this._.options.ttl }
-                await this._.latching.hook("session-for-account", "none", ctx)
+                ctx = { error: null, sessionId: null, accountId, peerId, ttl: this._.options.ttl }
+                await this._.latching.hook("session-create", "none", ctx)
                 if (ctx.error !== null)
                     return reply.unauthorized(`failed to create new session: ${ctx.error}`)
                 let sessionId = ctx.sessionId
@@ -72,13 +71,14 @@ export default class Auth {
 
                 /*  issue new token  */
                 let jwt = this._.jwtSign({
-                    sessionId: sessionId,
+                    peerId:    peerId,
                     accountId: accountId,
-                    deviceId:  deviceId
+                    sessionId: sessionId
                 }, "365d")
 
-                /*  send token in payload and cookie  */
-                reply({ token: jwt }).code(201).state("token", jwt, {
+                /*  send token and peer information in payload and cookie  */
+                let payload = { token: jwt, peer: peerId }
+                reply(payload).code(201).state(`${this._.options.prefix}Token`, jwt, {
                     ttl:          this._.options.ttl,
                     path:         this._.url.path,
                     encoding:     "none",
@@ -100,10 +100,10 @@ export default class Auth {
             handler: async (request, reply) => {
                 /*  fetch credentials  */
                 let ctx = {
-                    error: null,
-                    sessionId: request.auth.credentials.sessionId,
+                    error:     null,
+                    peerId:    request.auth.credentials.peerId,
                     accountId: request.auth.credentials.accountId,
-                    deviceId:  request.auth.credentials.deviceId
+                    sessionId: request.auth.credentials.sessionId
                 }
                 await this._.latching.hook("session-details", "none", ctx)
                 if (ctx.error !== null)
@@ -112,9 +112,9 @@ export default class Auth {
 
                 /*  pass-through information  */
                 reply({
-                    sessionId: sessionId,
+                    peerId:    peerId,
                     accountId: accountId,
-                    deviceId:  deviceId
+                    sessionId: sessionId
                 }).code(200)
             }
         })

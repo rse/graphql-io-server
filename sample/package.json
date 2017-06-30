@@ -8,7 +8,7 @@
     "devDependencies": {
     },
     "scripts": {
-        "start":                          "node hello.js",
+        "start":                          "node sample.js",
         "clean":                          "rimraf node_modules"
     }
 }
