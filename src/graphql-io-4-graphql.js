@@ -139,7 +139,7 @@ export default class GraphQLService {
             method: endpointMethod,
             path:   endpointURL,
             config: {
-                auth:    { mode: "required", strategy: "jwt" },
+                auth:    { mode: "try", strategy: "jwt" },
                 payload: { output: "data", parse: true, allow: "application/json" },
                 plugins: {
                     websocket: {
@@ -206,7 +206,7 @@ export default class GraphQLService {
                     return reply(Boom.badRequest("invalid request"))
 
                 /*  determine session information  */
-                let { sessionId, accountId } = request.auth.credentials
+                let { peerId, accountId, sessionId } = request.auth.credentials
 
                 /*  create a scope for tracing GraphQL operations over WebSockets  */
                 let scope = ws.mode === "websocket" ? ws.ctx.conn.scope(query) : null
@@ -224,7 +224,7 @@ export default class GraphQLService {
                 /*  execute GraphQL operation within a transaction  */
                 return transaction((tx) => {
                     /*  create context for GraphQL resolver functions  */
-                    let ctx = { tx, scope, sessionId, accountId }
+                    let ctx = { tx, scope, peerId, accountId, sessionId }
 
                     /*  execute the GraphQL query against the GraphQL schema  */
                     return GraphQL.graphql(schemaExec, query, null, ctx, variables, operation)

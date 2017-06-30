@@ -28,7 +28,63 @@ import UUID from "pure-uuid"
 /*  Authentication functionality  */
 export default class Auth {
     static start () {
-        /*  provide login endpoint  */
+        /*  provide (implicit) (auto-)login mechanism  */
+        this._.server.ext("onPostAuth", async (request, reply) => {
+            if (request.auth.mode === "try" && !request.auth.isAuthenticated) {
+                /*  recognize peer by id  */
+                let { id: peerId } = request.peer()
+                let ctx = { error: null, peerId }
+                await this._.latching.hook("peer-recognize", "none", ctx)
+                if (ctx.error !== null)
+                    return reply.unauthorized(`failed to handle peer: ${ctx.error}`)
+                peerId = ctx.peerId
+
+                /*  authenticate account via username/password  */
+                ctx = { error: null, accountId: null, username: null, password: null }
+                await this._.latching.hook("account-authenticate", "none", ctx)
+                if (ctx.error !== null)
+                    return reply.unauthorized(`failed to authenticate username/password: ${ctx.error}`)
+                let accountId = ctx.accountId
+                if (accountId === null)
+                    accountId = "anonymous"
+
+                /*  create new session  */
+                ctx = { error: null, sessionId: null, accountId, peerId, ttl: this._.options.ttl }
+                await this._.latching.hook("session-create", "none", ctx)
+                if (ctx.error !== null)
+                    return reply.unauthorized(`failed to create new session: ${ctx.error}`)
+                let sessionId = ctx.sessionId
+                if (sessionId === null)
+                    sessionId = (new UUID(1)).format()
+
+                /*  issue new token  */
+                let jwt = this._.jwtSign({
+                    peerId:    peerId,
+                    accountId: accountId,
+                    sessionId: sessionId
+                }, "365d")
+
+                /*  provide token as a cookie  */
+                reply.state(`${this._.options.prefix}Token`, jwt, {
+                    ttl:          this._.options.ttl,
+                    path:         this._.url.path,
+                    encoding:     "none",
+                    isHttpOnly:   true,
+                    isSecure:     false,
+                    clearInvalid: false,
+                    strictHeader: true
+                })
+
+                /*  provide implicit authentication information  */
+                request.auth.isAuthenticated = true
+                request.auth.strategy        = "jwt"
+                request.auth.credentials     = { peerId, accountId, sessionId }
+                request.auth.error           = null
+            }
+            reply.continue()
+        })
+
+        /*  provide (explicit) login endpoint  */
         this._.server.route({
             method: "POST",
             path:   `${this._.url.path}${this._.options.path.login}`,
@@ -98,12 +154,19 @@ export default class Auth {
                 auth: { mode: "try", strategy: "jwt" }
             },
             handler: async (request, reply) => {
+                /* eslint no-console: off */
+                console.log(request.auth)
                 /*  fetch credentials  */
                 let ctx = {
                     error:     null,
-                    peerId:    request.auth.credentials.peerId,
-                    accountId: request.auth.credentials.accountId,
-                    sessionId: request.auth.credentials.sessionId
+                    peerId:    null,
+                    accountId: null,
+                    sessionId: null
+                }
+                if (request.auth.isAuthenticated) {
+                    ctx.peerId    = request.auth.credentials.peerId
+                    ctx.accountId = request.auth.credentials.accountId
+                    ctx.sessionId = request.auth.credentials.sessionId
                 }
                 await this._.latching.hook("session-details", "none", ctx)
                 if (ctx.error !== null)
@@ -128,7 +191,9 @@ export default class Auth {
             },
             handler: async (request, reply) => {
                 /*  destroy session  */
-                if (request.auth.credentials !== null) {
+                if (   request.auth.isAuthenticated
+                    && typeof request.auth.credentials === "object"
+                    && request.auth.credentials !== null) {
                     let { sessionId } = request.auth.credentials
                     let ctx = { error: null, sessionId }
                     await this._.latching.hook("session-destroy", "none", ctx)
@@ -137,11 +202,12 @@ export default class Auth {
                 }
 
                 /*  destroy cookie  */
-                reply().code(204).state("token", "", {
+                reply().code(204).state(`${this._.options.prefix}Token`, "", {
                     ttl:          0,
                     path:         this._.url.path,
                     encoding:     "none",
                     isHttpOnly:   true,
+                    isSecure:     false,
                     clearInvalid: false,
                     strictHeader: true
                 })

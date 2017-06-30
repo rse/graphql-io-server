@@ -33,6 +33,9 @@ export default class BLOB {
             this._.server.route({
                 method: "GET",
                 path: `${this._.options.path.blob}/{path*}`,
+                config: {
+                    auth: { mode: "try", strategy: "jwt" }
+                },
                 handler: (request, reply) => {
                     let { path, filename, type, content } =
                         this._.latching.hook("blob", request.params.path, request)
