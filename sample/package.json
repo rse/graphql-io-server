@@ -1,0 +1,14 @@
+{
+    "name":                               "sample",
+    "version":                            "0.0.0",
+    "description":                        "",
+    "dependencies": {
+        "graphql-io-server":              "file:../"
+    },
+    "devDependencies": {
+    },
+    "scripts": {
+        "start":                          "node hello.js",
+        "clean":                          "rimraf node_modules"
+    }
+}
