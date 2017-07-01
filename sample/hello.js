@@ -1,7 +1,7 @@
+(async () => {
 
-const { Server } = require("graphql-io-server")
-
-;(async () => {
+    /*  Hello World Server  */
+    const { Server } = require("graphql-io-server")
     const sv = new Server({ url: "http://127.0.0.1:12345/api" })
     sv.on("debug", ({ log }) => console.log(log))
     sv.at("graphql-resolver", () => ({
@@ -16,7 +16,7 @@ const { Server } = require("graphql-io-server")
         }
     }))
     await sv.start()
+
 })().catch((err) => {
     console.log("ERROR", err)
 })
-
