@@ -41,27 +41,8 @@ $ npm install graphql-io-server
 Usage
 -----
 
-Simple [Hello World Client](https://github.com/rse/graphql-io-client/blob/master/sample/hello.js):
-
-```js
-(async () => {
-
-    /*  Hello World Client  */
-    const { Client } = require("graphql-io-client")
-    const sv = new Client({ url: "http://127.0.0.1:12345/api" })
-    sv.on("debug", ({ log }) => console.log(log))
-    await sv.connect()
-    let name = process.argv[2]
-    let result = await sv.query(name ? `{ hello(name: "${name}") }` : "{ hello }")
-    console.log(result.data)
-    await sv.disconnect()
-
-})().catch((err) => {
-    console.log("ERROR", err)
-})
-```
-
-Simple [Hello World Server](https://github.com/rse/graphql-io-server/blob/master/sample/hello.js):
+Simple [Hello World Server](https://github.com/rse/graphql-io-server/blob/master/sample/hello.js)
+(see [Hello World Client](https://github.com/rse/graphql-io-client/blob/master/sample/hello.js) for client-side):
 
 ```js
 (async () => {
