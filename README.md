@@ -8,8 +8,6 @@
 GraphQL-IO-Server
 =================
 
-[HERE BE DRAGONS -- STILL WORK IN PROGRESS -- EARLY ADOPTERS ONLY]
-
 GraphQL Network Communication Framework (Server)
 
 <p/>
