@@ -74,7 +74,14 @@ export default class Server extends StdAPI {
             keyval:      [ "string", "spm" ],
             frontend:    [ "string", "" ],
             encoding:    [ "/^(?:cbor|msgpack|json)$/", "json" ],
-            debug:       [ "number", 0 ]
+            debug:       [ "number", 0 ],
+            example:     [ "string",
+                "query Example {\n" +
+                "    session {\n" +
+                "        peerId accountId sessionId\n" +
+                "    }\n" +
+                "}\n"
+            ]
         })
 
         /*  initialize internal state  */

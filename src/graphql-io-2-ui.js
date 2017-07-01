@@ -78,17 +78,7 @@ export default class UI {
                         }),
                         credentials: "same-origin"
                     }`,
-                    graphqlExample:
-                        "query Example {\n" +
-                        "    me {\n" +
-                        "        __typename # schema introspection\n" +
-                        "        id\n" +
-                        "        account {\n" +
-                        "            id\n" +
-                        "            username\n" +
-                        "        }\n" +
-                        "    }\n" +
-                        "}\n"
+                    graphqlExample: this.$.example
                 }
             })
         }
