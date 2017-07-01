@@ -29,10 +29,10 @@ import Boom from "boom"
 export default class BLOB {
     static start () {
         /*  optional delivery of BLOB data  */
-        if (this._.options.frontend !== "") {
+        if (this.$.frontend !== "") {
             this._.server.route({
                 method: "GET",
-                path: `${this._.options.path.blob}/{path*}`,
+                path: `${this.$.path.blob}/{path*}`,
                 config: {
                     auth: { mode: "try", strategy: "jwt" }
                 },
@@ -49,7 +49,7 @@ export default class BLOB {
                         accountId,
                         sessionId
                     }
-                    await this._.latching.hook("blob", ctx)
+                    await this.hook("blob", ctx)
                     if (ctx.error !== null)
                         return reply.unauthorized(`failed to determine BLOB information: ${ctx.error}`)
                     if (ctx.path !== null) {

@@ -34,14 +34,14 @@ export default class Auth {
                 /*  recognize peer by id  */
                 let { id: peerId } = request.peer()
                 let ctx = { error: null, peerId }
-                await this._.latching.hook("peer-recognize", "none", ctx)
+                await this.hook("peer-recognize", "none", ctx)
                 if (ctx.error !== null)
                     return reply.unauthorized(`failed to handle peer: ${ctx.error}`)
                 peerId = ctx.peerId
 
                 /*  authenticate account via username/password  */
                 ctx = { error: null, accountId: null, username: null, password: null }
-                await this._.latching.hook("account-authenticate", "none", ctx)
+                await this.hook("account-authenticate", "none", ctx)
                 if (ctx.error !== null)
                     return reply.unauthorized(`failed to authenticate username/password: ${ctx.error}`)
                 let accountId = ctx.accountId
@@ -49,8 +49,8 @@ export default class Auth {
                     accountId = "anonymous"
 
                 /*  create new session  */
-                ctx = { error: null, sessionId: null, accountId, peerId, ttl: this._.options.ttl }
-                await this._.latching.hook("session-create", "none", ctx)
+                ctx = { error: null, sessionId: null, accountId, peerId, ttl: this.$.ttl }
+                await this.hook("session-create", "none", ctx)
                 if (ctx.error !== null)
                     return reply.unauthorized(`failed to create new session: ${ctx.error}`)
                 let sessionId = ctx.sessionId
@@ -65,8 +65,8 @@ export default class Auth {
                 }, "365d")
 
                 /*  provide token as a cookie  */
-                reply.state(`${this._.options.prefix}Token`, jwt, {
-                    ttl:          this._.options.ttl,
+                reply.state(`${this.$.prefix}Token`, jwt, {
+                    ttl:          this.$.ttl,
                     path:         this._.url.path,
                     encoding:     "none",
                     isHttpOnly:   true,
@@ -87,7 +87,7 @@ export default class Auth {
         /*  provide (explicit) login endpoint  */
         this._.server.route({
             method: "POST",
-            path:   `${this._.url.path}${this._.options.path.login}`,
+            path:   `${this._.url.path}${this.$.path.login}`,
             config: {
                 auth:     false,
                 payload:  { output: "data", parse: true, allow: "application/json" },
@@ -102,14 +102,14 @@ export default class Auth {
                 /*  recognize peer by id  */
                 let { id: peerId } = request.peer()
                 let ctx = { error: null, peerId }
-                await this._.latching.hook("peer-recognize", "none", ctx)
+                await this.hook("peer-recognize", "none", ctx)
                 if (ctx.error !== null)
                     return reply.unauthorized(`failed to handle peer: ${ctx.error}`)
                 peerId = ctx.peerId
 
                 /*  authenticate account via username/password  */
                 ctx = { error: null, accountId: null, username, password }
-                await this._.latching.hook("account-authenticate", "none", ctx)
+                await this.hook("account-authenticate", "none", ctx)
                 if (ctx.error !== null)
                     return reply.unauthorized(`failed to authenticate username/password: ${ctx.error}`)
                 let accountId = ctx.accountId
@@ -117,8 +117,8 @@ export default class Auth {
                     accountId = "anonymous"
 
                 /*  create new session  */
-                ctx = { error: null, sessionId: null, accountId, peerId, ttl: this._.options.ttl }
-                await this._.latching.hook("session-create", "none", ctx)
+                ctx = { error: null, sessionId: null, accountId, peerId, ttl: this.$.ttl }
+                await this.hook("session-create", "none", ctx)
                 if (ctx.error !== null)
                     return reply.unauthorized(`failed to create new session: ${ctx.error}`)
                 let sessionId = ctx.sessionId
@@ -134,8 +134,8 @@ export default class Auth {
 
                 /*  send token and peer information in payload and cookie  */
                 let payload = { token: jwt, peer: peerId }
-                reply(payload).code(201).state(`${this._.options.prefix}Token`, jwt, {
-                    ttl:          this._.options.ttl,
+                reply(payload).code(201).state(`${this.$.prefix}Token`, jwt, {
+                    ttl:          this.$.ttl,
                     path:         this._.url.path,
                     encoding:     "none",
                     isHttpOnly:   true,
@@ -149,7 +149,7 @@ export default class Auth {
         /*  provide session detail gathering endpoint  */
         this._.server.route({
             method: "GET",
-            path:   `${this._.url.path}${this._.options.path.session}`,
+            path:   `${this._.url.path}${this.$.path.session}`,
             config: {
                 auth: { mode: "try", strategy: "jwt" }
             },
@@ -168,7 +168,7 @@ export default class Auth {
                     ctx.accountId = request.auth.credentials.accountId
                     ctx.sessionId = request.auth.credentials.sessionId
                 }
-                await this._.latching.hook("session-details", "none", ctx)
+                await this.hook("session-details", "none", ctx)
                 if (ctx.error !== null)
                     return reply.unauthorized(`failed to determine session: ${ctx.error}`)
                 let { peerId, accountId, sessionId } = ctx
@@ -185,7 +185,7 @@ export default class Auth {
         /*  provide logout endpoint  */
         this._.server.route({
             method: "GET",
-            path:   `${this._.url.path}${this._.options.path.logout}`,
+            path:   `${this._.url.path}${this.$.path.logout}`,
             config: {
                 auth: false
             },
@@ -196,13 +196,13 @@ export default class Auth {
                     && request.auth.credentials !== null) {
                     let { sessionId } = request.auth.credentials
                     let ctx = { error: null, sessionId }
-                    await this._.latching.hook("session-destroy", "none", ctx)
+                    await this.hook("session-destroy", "none", ctx)
                     if (ctx.error !== null)
                         return reply.unauthorized(`failed to logout: ${ctx.error}`)
                 }
 
                 /*  destroy cookie  */
-                reply().code(204).state(`${this._.options.prefix}Token`, "", {
+                reply().code(204).state(`${this.$.prefix}Token`, "", {
                     ttl:          0,
                     path:         this._.url.path,
                     encoding:     "none",

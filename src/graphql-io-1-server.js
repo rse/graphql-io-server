@@ -24,10 +24,8 @@
 
 /*  external dependencies  */
 import fs                from "mz/fs"
-import Latching          from "latching"
-import EventEmitter      from "eventemitter3"
+import StdAPI            from "stdapi"
 import UUID              from "pure-uuid"
-import Ducky             from "ducky"
 import HAPI              from "hapi"
 import http              from "http"
 import Http2             from "http2"
@@ -53,20 +51,9 @@ import GraphQL           from "./graphql-io-4-graphql"
 import BLOB              from "./graphql-io-5-blob"
 
 /*  the exported API class  */
-export default class Server extends EventEmitter {
+export default class Server extends StdAPI {
     constructor (options) {
-        super()
-
-        /*  define internal state  */
-        Object.defineProperty(this, "_", {
-            configurable: false,
-            enumerable:   false,
-            writable:     false,
-            value:        {}
-        })
-
-        /*  determine options  */
-        this._.options = Ducky.options({
+        super(options, {
             prefix:      [ "string", "GraphQL-IO-" ],
             name:        [ "string", "GraphQL-IO-Server" ],
             url:         [ "/^https?:\\/\\/.+?:\\d+\\/.*$/", "http://127.0.0.1:8080/api" ],
@@ -88,47 +75,11 @@ export default class Server extends EventEmitter {
             frontend:    [ "string", "" ],
             encoding:    [ "/^(?:cbor|msgpack|json)$/", "json" ],
             debug:       [ "number", 0 ]
-        }, options)
+        })
 
         /*  initialize internal state  */
         this._.nsUUID = new UUID(5, "ns:URL", "http://graphql-io.com/ns/")
         this._.server = null
-
-        /*  provide latching sub-system  */
-        this._.latching = new Latching()
-    }
-
-    /*  INTERNAL: raise a fatal error  */
-    _error (err) {
-        this.log(1, `ERROR: ${err}`)
-        this.emit("error", err)
-        return this
-    }
-
-    /*  INTERNAL: raise a debug message  */
-    _log (level, msg) {
-        if (level <= this._.options.debug) {
-            let date = (new Date()).toISOString()
-            let log = `${date} DEBUG [${level}]: ${msg}`
-            this.emit("debug", { date, level, msg, log })
-        }
-        return this
-    }
-
-    /*  pass-through latching sub-system  */
-    at (...args) {
-        this._.latching.latch(...args)
-        return this
-    }
-    removeLatching (...args) {
-        this._.latching.unlatch(...args)
-        return this
-    }
-
-    /*  allow reconfiguration  */
-    configure (options) {
-        this._.options.merge(options)
-        return this
     }
 
     /*  start the service  */
@@ -139,10 +90,10 @@ export default class Server extends EventEmitter {
 
         /*  create underlying HTTP/HTTPS listener  */
         let listener
-        let withTLS = (this._.options.tls.crt !== "" && this._.options.tls.key !== "")
+        let withTLS = (this.$.tls.crt !== "" && this.$.tls.key !== "")
         if (withTLS) {
-            let crt = await fs.readFile(this._.options.tls.crt, "utf8")
-            let key = await fs.readFile(this._.options.tls.key, "utf8")
+            let crt = await fs.readFile(this.$.tls.crt, "utf8")
+            let key = await fs.readFile(this.$.tls.key, "utf8")
             listener = Http2.createServer({ key: key, cert: crt })
         }
         else
@@ -151,7 +102,7 @@ export default class Server extends EventEmitter {
             listener.address = function () { return this._server.address() }
 
         /*  configure the listening socket  */
-        this._.url = URI.parse(this._.options.url)
+        this._.url = URI.parse(this.$.url)
         let hapiOpts = {
             listener: listener,
             address:  this._.url.hostname,
@@ -168,14 +119,14 @@ export default class Server extends EventEmitter {
         await register({ register: HAPIBoom })
         await register({ register: HAPIDucky })
         await register({ register: HAPIHeader, options: {
-            Server: this._.options.name
+            Server: this.$.name
         }})
         await register({ register: HAPIWebSocket })
         await register({ register: HAPICo })
         await register({ register: HAPITraffic })
         await register({ register: HAPIPeer, options: {
             peerId: true,
-            cookieName: `${this._.options.prefix}Peer`,
+            cookieName: `${this.$.prefix}Peer`,
             cookieOptions: {
                 path: this._.url.path,
                 isSameSite: "Strict"
@@ -195,16 +146,16 @@ export default class Server extends EventEmitter {
         })
 
         /*  prepare for JSONWebToken (JWT) authentication  */
-        let jwtKey = this._.options.secret
+        let jwtKey = this.$.secret
         await server.register({ register: HAPIAuthJWT2 })
         server.auth.strategy("jwt", "jwt", {
             key:           jwtKey,
             verifyOptions: { algorithms: [ "HS256" ] },
-            urlKey:        `${this._.options.prefix}Token`,
-            cookieKey:     `${this._.options.prefix}Token`,
+            urlKey:        `${this.$.prefix}Token`,
+            cookieKey:     `${this.$.prefix}Token`,
             tokenType:     "JWT",
             validateFunc: (decoded, request, callback) => {
-                let result = this._.latching.hook("hapi:jwt-validate", "pass",
+                let result = this.hook("hapi:jwt-validate", "pass",
                     { error: null, result: true }, decoded, request)
                 callback(result.error, result.result, decoded)
             }
@@ -229,28 +180,28 @@ export default class Server extends EventEmitter {
                 "recv="     + traffic.recvPayload + "/" + traffic.recvRaw + ", " +
                 "sent="     + traffic.sentPayload + "/" + traffic.sentRaw + ", " +
                 "duration=" + traffic.timeDuration
-            this._log(2, `HAPI: request: ${msg}`)
+            this.debug(2, `HAPI: request: ${msg}`)
         })
         server.on("request-error", (request, err) => {
             if (err instanceof Error)
-                this._log(2, `HAPI: request-error: ${err.message}`)
+                this.debug(2, `HAPI: request-error: ${err.message}`)
             else
-                this._log(2, `HAPI: request-error: ${err}`)
+                this.debug(2, `HAPI: request-error: ${err}`)
         })
         server.on("log", (event, tags) => {
             if (tags.error) {
                 let err = event.data
                 if (err instanceof Error)
-                    this._log(2, `HAPI: log: ${err.message}`)
+                    this.debug(2, `HAPI: log: ${err.message}`)
                 else
-                    this._log(2, `HAPI: log: ${err}`)
+                    this.debug(2, `HAPI: log: ${err}`)
             }
         })
 
         /*  display network interaction information  */
         const displayListenHint = ([ scheme, proto ]) => {
             let url = `${scheme}://${this._.url.hostname}:${this._.url.port}`
-            this._log(2, `listen on ${url} (${proto})`)
+            this.debug(2, `listen on ${url} (${proto})`)
         }
         displayListenHint(withTLS ? [ "https", "HTTP/{1.0,1.1,2.0} + SSL/TLS" ] : [ "http",  "HTTP/{1.0,1.1}" ])
         displayListenHint(withTLS ? [ "wss",   "WebSockets + SSL/TLS" ]         : [ "ws",    "WebSockets" ])
@@ -265,11 +216,11 @@ export default class Server extends EventEmitter {
         return new Promise((resolve, reject) => {
             server.start((err) => {
                 if (err) {
-                    this._log(2, "ERROR: failed to start HAPI service")
+                    this.debug(2, "ERROR: failed to start HAPI service")
                     reject(err)
                 }
                 else {
-                    this._log(2, "OK: started HAPI service")
+                    this.debug(2, "OK: started HAPI service")
                     resolve()
                 }
             })
@@ -280,7 +231,7 @@ export default class Server extends EventEmitter {
     stop () {
         /*   stop the HAPI service  */
         return new Promise((resolve /*, reject */) => {
-            this._log(2, "gracefully stopping HAPI service")
+            this.debug(2, "gracefully stopping HAPI service")
             this._.server.root.stop({ timeout: 4 * 1000 }, () => {
                 /*  teardown services  */
                 UI.stop.call(this)

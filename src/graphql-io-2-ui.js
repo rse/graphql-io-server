@@ -30,13 +30,13 @@ export default class UI {
     static start () {
         /*  optional static delivery of specific application UI
             (works at top-level because HAPI route are matched most-specific)  */
-        if (this._.options.frontend !== "") {
+        if (this.$.frontend !== "") {
             this._.server.route({
                 method: "GET",
                 path: `${this._.url.path}/{path*}`,
                 handler: {
                     directory: {
-                        path:  this._.options.frontend,
+                        path:  this.$.frontend,
                         index: true,
                         listing: false,
                         showHidden: false,
@@ -51,12 +51,12 @@ export default class UI {
 
         /*  optional static delivery of generic GraphiQL UI
             (works at same path as GraphQL as it is GET based)  */
-        if (this._.options.graphiql) {
+        if (this.$.graphiql) {
             this._.server.register({
                 register: HAPIGraphiQL,
                 options: {
                     graphiqlURL:     this._.url.path,
-                    graphqlFetchURL: `${this._.url.path}${this._.options.path.graph}`,
+                    graphqlFetchURL: `${this._.url.path}${this.$.path.graph}`,
                     graphqlFetchOpts: `{
                         method: "POST",
                         headers: {
@@ -66,7 +66,7 @@ export default class UI {
                         body: JSON.stringify(params),
                         credentials: "same-origin"
                     }`,
-                    loginFetchURL: `${this._.url.path}${this._.options.path.login}`,
+                    loginFetchURL: `${this._.url.path}${this.$.path.login}`,
                     loginFetchOpts: `{
                         method: "POST",
                         headers: {

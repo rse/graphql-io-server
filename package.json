@@ -20,6 +20,7 @@
     "homepage": "https://github.com/rse/graphql-io-server",
     "bugs":     "https://github.com/rse/graphql-io-server/issues",
     "dependencies": {
+        "stdapi":                         "~0.9.3",
         "graphql":                        "~0.10.3",
         "graphql-tools":                  "~1.1.0",
         "graphql-tools-sequelize":        "~1.3.5",
@@ -48,9 +49,7 @@
         "urijs":                          "~1.18.10",
         "pure-uuid":                      "~1.4.6",
         "ducky":                          "~2.6.0",
-        "mz":                             "~2.6.0",
-        "eventemitter3":                  "~2.0.3",
-        "latching":                       "~0.9.6"
+        "mz":                             "~2.6.0"
     },
     "devDependencies": {
         "grunt":                          "~1.0.1",

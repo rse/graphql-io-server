@@ -71,8 +71,8 @@ export default class GraphQLService {
                 resolver[type][attr] = value
             }
         }
-        let apiSchema   = this._.latching.hook("graphql-schema",   "append")
-        let apiResolver = this._.latching.hook("graphql-resolver", "concat")
+        let apiSchema   = this.hook("graphql-schema",   "append")
+        let apiResolver = this.hook("graphql-resolver", "concat")
         schema += apiSchema
         apiResolver.forEach((api) => {
             Object.keys(api).forEach((type) => {
@@ -100,8 +100,8 @@ export default class GraphQLService {
 
         /*  bootstrap GraphQL subscription framework  */
         let sub = new GraphQLSubscribe({
-            pubsub: this._.options.pubsub,
-            keyval: this._.options.keyval
+            pubsub: this.$.pubsub,
+            keyval: this.$.keyval
         })
 
         /*  mixin GraphQL subscription into schema and resolver  */
@@ -123,7 +123,7 @@ export default class GraphQLService {
         let schemaExec = GraphQLTools.makeExecutableSchema({
             typeDefs:  [ schema ],
             resolvers: resolver,
-            logger: { log: (err) => { this._log(2, `GraphQL: ERROR: ${err}`) } },
+            logger: { log: (err) => { this.debug(2, `GraphQL: ERROR: ${err}`) } },
             allowUndefinedInResolve: false,
             resolverValidationOptions: {
                 requireResolversForArgs:      true,
@@ -134,7 +134,7 @@ export default class GraphQLService {
 
         /*  establish the HAPI route for GraphQL  */
         let endpointMethod = "POST"
-        let endpointURL    = `${this._.url.path}${this._.options.path.graph}`
+        let endpointURL    = `${this._.url.path}${this.$.path.graph}`
         this._.server.route({
             method: endpointMethod,
             path:   endpointURL,
@@ -147,7 +147,7 @@ export default class GraphQLService {
 
                         /*  use framed communication  */
                         frame:         true,
-                        frameEncoding: this._.options.encoding,
+                        frameEncoding: this.$.encoding,
                         frameRequest:  "GRAPHQL-REQUEST",
                         frameResponse: "GRAPHQL-RESPONSE",
 
@@ -156,11 +156,11 @@ export default class GraphQLService {
                             let peer = this._.server.peer(req)
                             let cid = `${peer.addr}:${peer.port}`
                             let proto = `WebSocket/${ws.protocolVersion}+HTTP/${req.httpVersion}`
-                            this._log(1, `connect: peer=${cid}, method=${endpointMethod}, ` +
+                            this.debug(1, `connect: peer=${cid}, method=${endpointMethod}, ` +
                                 `url=${endpointURL}, protocol=${proto}`)
                             ctx.conn = sub.connection(cid, (sids) => {
                                 /*  send notification message about outdated subscriptions  */
-                                this._log(2, `sending GraphQL notification for SID(s): ${sids.join(", ")}`)
+                                this.debug(2, `sending GraphQL notification for SID(s): ${sids.join(", ")}`)
                                 try { wsf.send({ type: "GRAPHQL-NOTIFY", data: sids }) }
                                 catch (ex) { void (ex) }
                             })
@@ -171,7 +171,7 @@ export default class GraphQLService {
                             let peer = this._.server.peer(req)
                             let cid = `${peer.addr}:${peer.port}`
                             let proto = `WebSocket/${ws.protocolVersion}+HTTP/${req.httpVersion}`
-                            this._log(1, `disconnect: peer=${cid}, method=${endpointMethod}, ` +
+                            this.debug(1, `disconnect: peer=${cid}, method=${endpointMethod}, ` +
                                 `url=${endpointURL}, protocol=${proto}`)
                             ctx.conn.destroy()
                         }
@@ -212,7 +212,7 @@ export default class GraphQLService {
                 let scope = ws.mode === "websocket" ? ws.ctx.conn.scope(query) : null
 
                 /*  allow application to wrap execution into a (database) transaction  */
-                let transaction = this._.latching.hook("graphql-transaction", "none")
+                let transaction = this.hook("graphql-transaction", "none")
                 if (!transaction) {
                     transaction = (cb) => {
                         return new Promise((resolve, reject) => {
