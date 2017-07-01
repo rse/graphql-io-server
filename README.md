@@ -41,137 +41,55 @@ $ npm install graphql-io-server
 Usage
 -----
 
-Simple "Hello World":
+Simple [Hello World Client](https://github.com/rse/graphql-io-client/blob/master/sample/hello.js):
 
 ```js
-const { Server } = require("graphql-io-server")
+(async () => {
 
-;(async () => {
-    const sv = new Server({ url: "http://127.0.0.1:12345/api" })
+    /*  Hello World Client  */
+    const { Client } = require("graphql-io-client")
+    const sv = new Client({ url: "http://127.0.0.1:12345/api" })
     sv.on("debug", ({ log }) => console.log(log))
-    sv.at("graphql-resolver", () => ({
-        Root: {
-            hello: [
-                `hello(name: String): String`,
-                (obj, args, ctx, info) => args.name ? args.name : "world"
-            ]
-        }
-    }))
-    await sv.start()
+    await sv.connect()
+    let name = process.argv[2]
+    let result = await sv.query(name ? `{ hello(name: "${name}") }` : "{ hello }")
+    console.log(result.data)
+    await sv.disconnect()
+
 })().catch((err) => {
     console.log("ERROR", err)
 })
 ```
 
-Complex Example:
+Simple [Hello World Server](https://github.com/rse/graphql-io-server/blob/master/sample/hello.js):
 
 ```js
-import pbkdf2 from "pbkdf2-utils"
-sv.at("account-for-username-password", async (ctx) => {
-    let account = null
-    if (   typeof ctx.username === "string" && ctx.username !== ""
-        && typeof ctx.password === "string") {
-        account = await dm.Account.findOne({ where: { "username": ctx.username } })
-        if (account === null) {
-            ctx.error = "no such account"
-            return
+(async () => {
+
+    /*  Hello World Server  */
+    const { Server } = require("graphql-io-server")
+    const sv = new Server({ url: "http://127.0.0.1:12345/api" })
+    sv.on("debug", ({ log }) => console.log(log))
+    sv.at("graphql-resolver", () => ({
+        Root: {
+            hello: [ `
+                #   hello world
+                hello(name: String): String`,
+                (obj, args, ctx, info) => {
+                    return args.name ? args.name : "world"
+                }
+            ]
         }
-        let buf = new Buffer(account.password, "hex")
-        let valid = await pbkdf2.verify(password, buf)
-        if (!valid) {
-            ctx.error = "invalid password"
-            return
-        }
-    }
-    else {
-        account = await dm.Account.findOne({ where: { "username": "anonymous" } })
-        if (account === null) {
-            ctx.error = "account \"anonymous\" not found"
-            return
-        }
-    }
-    ctx.accountId = account.id
-})
-sv.at("session-create", async (ctx) => {
-    ctx.sessionId = (new UUID(1)).format()
-    let session = dm.Session.build({
-        id: ctx.sessionId,
-        expiresOn: Date.now() + ctx.ttl
-    })
-    await session.save()
-    await session.setAccount(ctx.accountId)
-})
-sv.at("session-details", async (ctx) => {
-   if (typeof ctx.sessionId === "string") {
-        let session = await dm.Session.findById(ctx.sessionId)
-        if (session !== null && Date.now() >= session.expiresOn) {
-            await session.destroy()
-            session = null
-        }
-        if (session === null)
-            ctx.sessionId = null
-    }
-    if (typeof ctx.accountId === "string") {
-        let account = await dm.Account.findById(ctx.accountId)
-        if (account === null)
-            ctx.accountId = null
-    }
-})
-sv.at("session-destroy", async (ctx) => {
-    let session = await dm.Session.findById(ctx.sessionId)
-    if (session !== null)
-        await session.destroy()
-})
-let job = schedule.scheduleJob("0 */30 * * * *", () => {
-    let sessions = await dm.Session.findAll({
-        where: { expiresOn: { $lte: Date.now() } }
-    })
-    sessions.forEach(async (session) => {
-        await session.destroy()
-    })
-})
-sv.at("graphql-schema", () => {
-    return `
-        #   The persons belonging to **OrgUnit**s.
-        type Person {
-            #   Unique identifier of a person.
-            id: ID!
-            #   Name of a person.
-            name: String
-            #   **OrgUnit** this person belongs to.
-            belongsTo: OrgUnit
-            #   **Person** this person is supervised by.
-            supervisor: Person
-        }
-    `
-})
-sv.at("graphql-resolver", () => {
-    return {
-        Person: {
-            ...
-        }
-    }
-})
-sv.at("graphql-transaction", async (ctx) => {
-    return (cb) => {
-        /*  wrap GraphQL operation into a database transaction  */
-        return db.transaction({
-            autocommit:     false,
-            deferrable:     true,
-            type:           db.Transaction.TYPES.DEFERRED,
-            isolationLevel: db.Transaction.ISOLATION_LEVELS.SERIALIZABLE
-        }, (tx) => {
-            cb(tx)
-        })
-    }
-})
-sv.at("blob", (name) => {
-    if (name === "foo")
-        return { filename: name, type: "text/plain", content: "foo" }
-    else
-        return { path: path.join(__dirname, name), filename: name }
+    }))
+    await sv.start()
+
+})().catch((err) => {
+    console.log("ERROR", err)
 })
 ```
+
+For a more elaborate example, see [Client Sample](https://github.com/rse/graphql-io-client/blob/master/sample/sample.js)
+an [Server Sample](https://github.com/rse/graphql-io-server/blob/master/sample/sample.js), too.
 
 Application Programming Interface (API)
 ---------------------------------------
