@@ -28,6 +28,7 @@ import * as GraphQLTools from "graphql-tools"
 import GraphQLTypes      from "graphql-tools-types"
 import GraphQLSubscribe  from "graphql-tools-subscribe"
 import Boom              from "boom"
+import textframe         from "textframe"
 
 /*  the GraphQL functionality  */
 export default class GraphQLService {
@@ -46,15 +47,24 @@ export default class GraphQLService {
         }
 
         /*  let application extend GraphQL schema and resolver  */
+        let apiSchema   = this.hook("graphql-schema",   "concat")
+        let apiResolver = this.hook("graphql-resolver", "concat")
+
+        /*  extend schema  */
+        apiSchema.forEach((api) => {
+            schema += textframe(api)
+        })
+
+        /*  extend resolver (and optionally schema)  */
         const mixinSchema = (type, value) => {
             if (type === "root")
-                schema += "\n" + value
+                schema += "\n" + textframe(value)
             else {
-                let re = new RegExp(`(\\stype\\s+${type}\\s*(?:implements\\s+\\S+)?\\s*\\{(?:.|\\r?\\n)*?)(\\})`)
+                let re = new RegExp(`(type\\s+${type}\\s*(?:implements\\s+\\S+)?\\s*\\{(?:.|\\r?\\n)*?)(\\})`)
                 let m = schema.match(re)
                 if (m === null)
                     throw new Error(`schema for ${type} not found`)
-                schema = schema.replace(re, `$1${value}$2`)
+                schema = schema.replace(re, `$1${textframe(value)}$2`)
             }
         }
         const mixinResolver = (type, attr, value) => {
@@ -71,21 +81,19 @@ export default class GraphQLService {
                 resolver[type][attr] = value
             }
         }
-        let apiSchema   = this.hook("graphql-schema",   "append")
-        let apiResolver = this.hook("graphql-resolver", "concat")
-        schema += apiSchema
         apiResolver.forEach((api) => {
             Object.keys(api).forEach((type) => {
                 Object.keys(api[type]).forEach((attr) => {
-                    if (typeof api[type][attr] === "string")
-                        mixinSchema(type, api[type][attr])
-                    else if (typeof api[type][attr] === "function")
+                    if (typeof api[type][attr] === "function")
                         mixinResolver(type, attr, api[type][attr])
                     else if (typeof api[type][attr] === "object" && api[type][attr] instanceof Array) {
                         let [ d, r ] = api[type][attr]
                         mixinSchema(type, d)
                         mixinResolver(type, attr, r)
                     }
+                    else
+                        throw new Error(`invalid GraphQL resolver entry under path "${type}.${attr}" ` +
+                            "(expected function or array)")
                 })
             })
         })
