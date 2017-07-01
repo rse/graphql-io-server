@@ -6,9 +6,12 @@ const { Server } = require("graphql-io-server")
     sv.on("debug", ({ log }) => console.log(log))
     sv.at("graphql-resolver", () => ({
         Root: {
-            hello: [
-                `hello(name: String): String`,
-                (obj, args, ctx, info) => args.name ? args.name : "world"
+            hello: [ `
+                #   hello world
+                hello(name: String): String`,
+                (obj, args, ctx, info) => {
+                    return args.name ? args.name : "world"
+                }
             ]
         }
     }))
