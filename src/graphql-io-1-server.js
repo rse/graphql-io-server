@@ -56,7 +56,7 @@ export default class Server extends StdAPI {
         super(options, {
             prefix:      [ "string", "GraphQL-IO-" ],
             name:        [ "string", "GraphQL-IO-Server" ],
-            url:         [ "/^https?:\\/\\/.+?:\\d+\\/.*$/", "http://127.0.0.1:8080/api" ],
+            url:         [ "/^https?:\\/\\/.+?:\\d+(?:\\/.*)?$/", "http://127.0.0.1:8080/api" ],
             path: {
                 login:   [ "/^(?:|\\/.+)$/", "/auth/login" ],
                 session: [ "/^(?:|\\/.+)$/", "/auth/session" ],
