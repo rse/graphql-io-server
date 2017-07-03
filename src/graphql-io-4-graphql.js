@@ -30,6 +30,9 @@ import GraphQLSubscribe  from "graphql-tools-subscribe"
 import Boom              from "boom"
 import textframe         from "textframe"
 
+/*  internal requirements  */
+import pkg               from "../package.json"
+
 /*  the GraphQL functionality  */
 export default class GraphQLService {
     static start () {
@@ -106,6 +109,84 @@ export default class GraphQLService {
         mixinResolver("root", "UUID", GraphQLTypes.UUID({ name: "UUID", storage: "string" }))
         mixinResolver("root", "Void", GraphQLTypes.Void({ name: "Void" }))
 
+        /*  mixin GraphQL server information into schema and resolver  */
+        mixinSchema("Root", "Server: Server")
+        mixinSchema("root", `
+            type Server {
+                name:    String
+                version: String
+                load1:   Float
+                load5:   Float
+                load15:  Float
+                clients: Int
+            }
+        `)
+        let server = {
+            name:    pkg.name,
+            version: pkg.version,
+            load1:   0.0,
+            load5:   0.0,
+            load15:  0.0,
+            clients: 0
+        }
+        mixinResolver("Root", "Server", (obj, args, ctx, info) => {
+            sub.scopeRecord("Server", 0, "read", "direct", "one")
+            return server
+        })
+
+        /*  perform load accounting  */
+        let requestsWithinUnit = 0
+        let requestsWithinUnitForLoad10 = 5 * 10
+        let loadAccountUnit = 5 * 1000
+        let loadAvg1  = []
+        let loadAvg5  = []
+        let loadAvg15 = []
+        setInterval(() => {
+            /*  store requests within current unit  */
+            loadAvg1.push(requestsWithinUnit)
+            if (loadAvg1.length > 1 * ((60 * 1000) / loadAccountUnit))
+                loadAvg1.shift()
+            loadAvg5.push(requestsWithinUnit)
+            if (loadAvg5.length > 5 * ((60 * 1000) / loadAccountUnit))
+                loadAvg5.shift()
+            loadAvg15.push(requestsWithinUnit)
+            if (loadAvg15.length > 15 * ((60 * 1000) / loadAccountUnit))
+                loadAvg15.shift()
+            requestsWithinUnit = 0
+            let modified = false
+
+            /*  calculate load average over last 1 minute  */
+            let load = loadAvg1.reduce((sum, val) => sum + val, 0) / loadAvg1.length
+            load = (load / requestsWithinUnitForLoad10) * 1.0
+            load = Math.trunc(load * 100) / 100
+            if (server.load1 !== load) {
+                server.load1 = load
+                modified = true
+            }
+
+            /*  calculate load average over last 5 minutes  */
+            load = loadAvg5.reduce((sum, val) => sum + val, 0) / loadAvg5.length
+            load = (load / requestsWithinUnitForLoad10) * 1.0
+            load = Math.trunc(load * 100) / 100
+            if (server.load5 !== load) {
+                server.load5 = load
+                modified = true
+            }
+
+            /*  calculate load average over last 15 minutes  */
+            load = loadAvg15.reduce((sum, val) => sum + val, 0) / loadAvg15.length
+            load = (load / requestsWithinUnitForLoad10) * 1.0
+            load = Math.trunc(load * 100) / 100
+            if (server.load15 !== load) {
+                server.load15 = load
+                modified = true
+            }
+
+            /*  on any changes to the server object, record the change  */
+            if (modified)
+                sub.scopeRecord("Server", 0, "update", "direct", "one")
+        }, loadAccountUnit)
+
         /*  bootstrap GraphQL subscription framework  */
         let sub = new GraphQLSubscribe({
             pubsub: this.$.pubsub,
@@ -172,6 +253,8 @@ export default class GraphQLService {
                                 try { wsf.send({ type: "GRAPHQL-NOTIFY", data: sids }) }
                                 catch (ex) { void (ex) }
                             })
+                            server.clients++
+                            sub.scopeRecord("Server", 0, "update", "direct", "one")
                         },
 
                         /*  on WebSocket disconnection, destroy subscription connection  */
@@ -179,6 +262,10 @@ export default class GraphQLService {
                             let peer = this._.server.peer(req)
                             let cid = `${peer.addr}:${peer.port}`
                             let proto = `WebSocket/${ws.protocolVersion}+HTTP/${req.httpVersion}`
+                            if (server.clients > 0) {
+                                server.clients--
+                                sub.scopeRecord("Server", 0, "update", "direct", "one")
+                            }
                             this.debug(1, `disconnect: peer=${cid}, method=${endpointMethod}, ` +
                                 `url=${endpointURL}, protocol=${proto}`)
                             ctx.conn.destroy()
@@ -199,6 +286,9 @@ export default class GraphQLService {
                     (instead we just want the authentication to be done by HAPI)  */
                 if (ws.initially)
                     return reply().code(204)
+
+                /*  load accounting  */
+                requestsWithinUnit++
 
                 /*  determine request  */
                 if (typeof request.payload !== "object" || request.payload === null)
