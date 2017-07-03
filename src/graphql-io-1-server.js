@@ -96,9 +96,14 @@ export default class Server extends StdAPI {
         let server = new HAPI.Server()
         this._.server = server
 
+        /*  parse the URL  */
+        this._.url = URI.parse(this.$.url)
+        let withTLS = (this.$.tls.crt !== "" && this.$.tls.key !== "")
+        if (!withTLS && this._.url.protocol === "https")
+            throw new Error("HTTPS requires TLS Certificate/Key")
+
         /*  create underlying HTTP/HTTPS listener  */
         let listener
-        let withTLS = (this.$.tls.crt !== "" && this.$.tls.key !== "")
         if (withTLS) {
             let crt = await fs.readFile(this.$.tls.crt, "utf8")
             let key = await fs.readFile(this.$.tls.key, "utf8")
@@ -110,7 +115,6 @@ export default class Server extends StdAPI {
             listener.address = function () { return this._server.address() }
 
         /*  configure the listening socket  */
-        this._.url = URI.parse(this.$.url)
         let hapiOpts = {
             listener: listener,
             address:  this._.url.hostname,
