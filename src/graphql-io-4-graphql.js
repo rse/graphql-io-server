@@ -29,6 +29,7 @@ import GraphQLTypes      from "graphql-tools-types"
 import GraphQLSubscribe  from "graphql-tools-subscribe"
 import Boom              from "boom"
 import textframe         from "textframe"
+import PubSub            from "ipc-pubsub"
 
 /*  internal requirements  */
 import pkg               from "../package.json"
@@ -36,6 +37,10 @@ import pkg               from "../package.json"
 /*  the GraphQL functionality  */
 export default class GraphQLService {
     static async start () {
+        /*  setup IPC communication bus  */
+        let bus = new PubSub(this.$.pubsub)
+        await bus.open()
+
         /*  bootstrap GraphQL subscription framework  */
         let sub = new GraphQLSubscribe({
             pubsub: this.$.pubsub,
@@ -192,6 +197,19 @@ export default class GraphQLService {
             if (modified)
                 sub.scopeRecord("Server", 0, "update", "direct", "one")
         }, loadAccountUnit)
+        bus.subscribe("client-connections", (num) => {
+            /* eslint no-console: off */
+            console.log("client-connection", num)
+            server.clients += num
+            if (server.clients < 0)
+                server.clients = 0
+            sub.scopeRecord("Server", 0, "update", "direct", "one")
+        })
+        bus.subscribe("client-requests", (num) => {
+            /* eslint no-console: off */
+            console.log("client-requests", num)
+            requestsWithinUnit++
+        })
 
         /*  mixin GraphQL subscription into schema and resolver  */
         mixinSchema("Root",         sub.schemaSubscription())
@@ -253,8 +271,7 @@ export default class GraphQLService {
                                 try { wsf.send({ type: "GRAPHQL-NOTIFY", data: sids }) }
                                 catch (ex) { void (ex) }
                             })
-                            server.clients++
-                            sub.scopeRecord("Server", 0, "update", "direct", "one")
+                            bus.publish("client-connections", +1)
                         },
 
                         /*  on WebSocket disconnection, destroy subscription connection  */
@@ -262,10 +279,7 @@ export default class GraphQLService {
                             let peer = this._.server.peer(req)
                             let cid = `${peer.addr}:${peer.port}`
                             let proto = `WebSocket/${ws.protocolVersion}+HTTP/${req.httpVersion}`
-                            if (server.clients > 0) {
-                                server.clients--
-                                sub.scopeRecord("Server", 0, "update", "direct", "one")
-                            }
+                            bus.publish("client-connections", -1)
                             this.debug(1, `disconnect: peer=${cid}, method=${endpointMethod}, ` +
                                 `url=${endpointURL}, protocol=${proto}`)
                             ctx.conn.destroy()
@@ -288,7 +302,7 @@ export default class GraphQLService {
                     return reply().code(204)
 
                 /*  load accounting  */
-                requestsWithinUnit++
+                bus.publish("client-requests", +1)
 
                 /*  determine request  */
                 if (typeof request.payload !== "object" || request.payload === null)
