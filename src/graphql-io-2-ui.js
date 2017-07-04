@@ -27,7 +27,7 @@ import HAPIGraphiQL from "hapi-plugin-graphiql"
 
 /*  static delivery of User Interfaces  */
 export default class UI {
-    static start () {
+    static async start () {
         /*  optional static delivery of specific application UI
             (works at top-level because HAPI route are matched most-specific)  */
         if (this.$.frontend !== "") {
@@ -83,7 +83,7 @@ export default class UI {
             })
         }
     }
-    static stop () {
+    static async stop () {
     }
 }
 

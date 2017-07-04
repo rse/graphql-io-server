@@ -35,7 +35,13 @@ import pkg               from "../package.json"
 
 /*  the GraphQL functionality  */
 export default class GraphQLService {
-    static start () {
+    static async start () {
+        /*  bootstrap GraphQL subscription framework  */
+        let sub = new GraphQLSubscribe({
+            pubsub: this.$.pubsub,
+            keyval: this.$.keyval
+        })
+
         /*  start with a mininum GraphQL schema and resolver  */
         let schema = `
             schema {
@@ -187,12 +193,6 @@ export default class GraphQLService {
                 sub.scopeRecord("Server", 0, "update", "direct", "one")
         }, loadAccountUnit)
 
-        /*  bootstrap GraphQL subscription framework  */
-        let sub = new GraphQLSubscribe({
-            pubsub: this.$.pubsub,
-            keyval: this.$.keyval
-        })
-
         /*  mixin GraphQL subscription into schema and resolver  */
         mixinSchema("Root",         sub.schemaSubscription())
         mixinSchema("root",         "type Subscription {}")
@@ -340,7 +340,7 @@ export default class GraphQLService {
             }
         })
     }
-    static stop () {
+    static async stop () {
         /* FIXME */
     }
 }

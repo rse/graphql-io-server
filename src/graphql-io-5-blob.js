@@ -27,7 +27,7 @@ import Boom from "boom"
 
 /*  the Binary Large OBject (BLOB) delivery  */
 export default class BLOB {
-    static start () {
+    static async start () {
         /*  optional delivery of BLOB data  */
         if (this.$.frontend !== "") {
             this._.server.route({
@@ -80,7 +80,7 @@ export default class BLOB {
             })
         }
     }
-    static stop () {
+    static async stop () {
         /* FIXME */
     }
 }

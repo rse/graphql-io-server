@@ -219,10 +219,10 @@ export default class Server extends StdAPI {
         displayListenHint(withTLS ? [ "wss",   "WebSockets + SSL/TLS" ]         : [ "ws",    "WebSockets" ])
 
         /*  setup services  */
-        UI.start.call(this)
-        Auth.start.call(this)
-        GraphQL.start.call(this)
-        BLOB.start.call(this)
+        await UI.start.call(this)
+        await Auth.start.call(this)
+        await GraphQL.start.call(this)
+        await BLOB.start.call(this)
 
         /*  start the HAPI service  */
         return new Promise((resolve, reject) => {
@@ -240,19 +240,22 @@ export default class Server extends StdAPI {
     }
 
     /*  stop the service  */
-    stop () {
+    async stop () {
         /*   stop the HAPI service  */
-        return new Promise((resolve /*, reject */) => {
-            this.debug(2, "gracefully stopping HAPI service")
+        this.debug(2, "gracefully stopping HAPI service")
+        await new Promise((resolve /*, reject */) => {
             this._.server.root.stop({ timeout: 4 * 1000 }, () => {
-                /*  teardown services  */
-                UI.stop.call(this)
-                Auth.stop.call(this)
-                GraphQL.stop.call(this)
-                BLOB.stop.call(this)
-                this._.server = null
                 resolve()
             })
         })
+
+        /*  teardown services  */
+        await UI.stop.call(this)
+        await Auth.stop.call(this)
+        await GraphQL.stop.call(this)
+        await BLOB.stop.call(this)
+
+        /*  finally destroy HAPI instance  */
+        this._.server = null
     }
 }

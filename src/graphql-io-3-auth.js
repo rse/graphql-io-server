@@ -27,7 +27,7 @@ import UUID from "pure-uuid"
 
 /*  Authentication functionality  */
 export default class Auth {
-    static start () {
+    static async start () {
         /*  provide (implicit) (auto-)login mechanism  */
         this._.server.ext("onPostAuth", async (request, reply) => {
             if (request.auth.mode === "try" && !request.auth.isAuthenticated) {
@@ -214,6 +214,6 @@ export default class Auth {
             }
         })
     }
-    static stop () {
+    static async stop () {
     }
 }
