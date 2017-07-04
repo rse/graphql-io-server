@@ -124,7 +124,7 @@ export default class GraphQLService {
         mixinResolver("root", "Void", GraphQLTypes.Void({ name: "Void" }))
 
         /*  mixin GraphQL server information into schema and resolver  */
-        mixinSchema("Root", "Server: Server")
+        mixinSchema("Root", "_Server: Server")
         mixinSchema("root", `
             #   Information about GraphQL-IO Server
             type Server {
@@ -153,7 +153,7 @@ export default class GraphQLService {
             load15m: 0.0,
             clients: 0
         }
-        mixinResolver("Root", "Server", (obj, args, ctx, info) => {
+        mixinResolver("Root", "_Server", (obj, args, ctx, info) => {
             ctx.scope.record("Server", 0, "read", "direct", "one")
             return server
         })
