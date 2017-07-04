@@ -22,6 +22,9 @@
 **  SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
+/*  standard requirements  */
+import cluster           from "cluster"
+
 /*  external requirements  */
 import * as GraphQL      from "graphql"
 import * as GraphQLTools from "graphql-tools"
@@ -146,8 +149,13 @@ export default class GraphQLService {
         })
 
         /*  perform load accounting  */
+        let processes = 1
+        if (cluster.isMaster) {
+            cluster.on("exit", () => { processes-- })
+            cluster.on("fork", () => { processes++ })
+        }
         let requestsWithinUnit = 0
-        let requestsWithinUnitForLoad10 = 5 * 10
+        let requestsWithinUnitForLoad10 = 5 /* sec */ * 10 /* requests/sec  */
         let loadAccountUnit = 5 * 1000
         let loadAvg1  = []
         let loadAvg5  = []
@@ -168,7 +176,7 @@ export default class GraphQLService {
 
             /*  calculate load average over last 1 minute  */
             let load = loadAvg1.reduce((sum, val) => sum + val, 0) / loadAvg1.length
-            load = (load / requestsWithinUnitForLoad10) * 1.0
+            load = (load / (requestsWithinUnitForLoad10 * processes)) * 1.0
             load = Math.trunc(load * 100) / 100
             if (server.load1 !== load) {
                 server.load1 = load
@@ -177,7 +185,7 @@ export default class GraphQLService {
 
             /*  calculate load average over last 5 minutes  */
             load = loadAvg5.reduce((sum, val) => sum + val, 0) / loadAvg5.length
-            load = (load / requestsWithinUnitForLoad10) * 1.0
+            load = (load / (requestsWithinUnitForLoad10 * processes)) * 1.0
             load = Math.trunc(load * 100) / 100
             if (server.load5 !== load) {
                 server.load5 = load
@@ -186,7 +194,7 @@ export default class GraphQLService {
 
             /*  calculate load average over last 15 minutes  */
             load = loadAvg15.reduce((sum, val) => sum + val, 0) / loadAvg15.length
-            load = (load / requestsWithinUnitForLoad10) * 1.0
+            load = (load / (requestsWithinUnitForLoad10 * processes)) * 1.0
             load = Math.trunc(load * 100) / 100
             if (server.load15 !== load) {
                 server.load15 = load
@@ -198,16 +206,12 @@ export default class GraphQLService {
                 sub.scopeRecord("Server", 0, "update", "direct", "one")
         }, loadAccountUnit)
         bus.subscribe("client-connections", (num) => {
-            /* eslint no-console: off */
-            console.log("client-connection", num)
             server.clients += num
             if (server.clients < 0)
                 server.clients = 0
             sub.scopeRecord("Server", 0, "update", "direct", "one")
         })
         bus.subscribe("client-requests", (num) => {
-            /* eslint no-console: off */
-            console.log("client-requests", num)
             requestsWithinUnit++
         })
 
