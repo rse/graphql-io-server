@@ -237,18 +237,18 @@ export default class GraphQLService {
 
         /*  mixin GraphQL subscription into schema and resolver  */
         mixinSchema("Root",         sub.schemaSubscription())
-        mixinSchema("root",         "type Subscription {}")
-        mixinSchema("Subscription", sub.schemaSubscriptions())
-        mixinSchema("Subscription", sub.schemaSubscribe())
-        mixinSchema("Subscription", sub.schemaUnsubscribe())
-        mixinSchema("Subscription", sub.schemaPause())
-        mixinSchema("Subscription", sub.schemaResume())
-        mixinResolver("Root",         "Subscription",  sub.resolverSubscription())
-        mixinResolver("Subscription", "subscriptions", sub.resolverSubscriptions())
-        mixinResolver("Subscription", "subscribe",     sub.resolverSubscribe())
-        mixinResolver("Subscription", "unsubscribe",   sub.resolverUnsubscribe())
-        mixinResolver("Subscription", "pause",         sub.resolverPause())
-        mixinResolver("Subscription", "resume",        sub.resolverResume())
+        mixinSchema("root",         "type _Subscription {}")
+        mixinSchema("_Subscription", sub.schemaSubscriptions())
+        mixinSchema("_Subscription", sub.schemaSubscribe())
+        mixinSchema("_Subscription", sub.schemaUnsubscribe())
+        mixinSchema("_Subscription", sub.schemaPause())
+        mixinSchema("_Subscription", sub.schemaResume())
+        mixinResolver("Root",         "_Subscription",  sub.resolverSubscription())
+        mixinResolver("_Subscription", "subscriptions", sub.resolverSubscriptions())
+        mixinResolver("_Subscription", "subscribe",     sub.resolverSubscribe())
+        mixinResolver("_Subscription", "unsubscribe",   sub.resolverUnsubscribe())
+        mixinResolver("_Subscription", "pause",         sub.resolverPause())
+        mixinResolver("_Subscription", "resume",        sub.resolverResume())
 
         /*  generate GraphQL schema  */
         let schemaExec = GraphQLTools.makeExecutableSchema({
