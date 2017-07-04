@@ -126,25 +126,35 @@ export default class GraphQLService {
         /*  mixin GraphQL server information into schema and resolver  */
         mixinSchema("Root", "Server: Server")
         mixinSchema("root", `
+            #   Information about GraphQL-IO Server
             type Server {
+                #   name of GraphQL-IO Server
                 name:    String
+                #   version of GraphQL-IO Server
                 version: String
-                load1:   Float
-                load5:   Float
-                load15:  Float
+                #   load average within last 5 seconds in request/second
+                load5s:  Float
+                #   load average within last 1 minute in request/second
+                load1m:  Float
+                #   load average within last 5 minutes in request/second
+                load5m:  Float
+                #   load average within last 15 minutes in request/second
+                load15m: Float
+                #   number of currently connected clients
                 clients: Int
             }
         `)
         let server = {
             name:    pkg.name,
             version: pkg.version,
-            load1:   0.0,
-            load5:   0.0,
-            load15:  0.0,
+            load5s:  0.0,
+            load1m:  0.0,
+            load5m:  0.0,
+            load15m: 0.0,
             clients: 0
         }
         mixinResolver("Root", "Server", (obj, args, ctx, info) => {
-            sub.scopeRecord("Server", 0, "read", "direct", "one")
+            ctx.scope.record("Server", 0, "read", "direct", "one")
             return server
         })
 
@@ -155,64 +165,74 @@ export default class GraphQLService {
             cluster.on("fork", () => { processes++ })
         }
         let requestsWithinUnit = 0
-        let requestsWithinUnitForLoad10 = 5 /* sec */ * 10 /* requests/sec  */
+        let requestsWithinUnitForLoad10 = 5 /* sec */ * 1 /* requests/sec  */
         let loadAccountUnit = 5 * 1000
         let loadAvg1  = []
         let loadAvg5  = []
         let loadAvg15 = []
         setInterval(() => {
-            /*  store requests within current unit  */
+            let modified = false
+
+            /*  calculate load average over last 5 seconds  */
+            let load = requestsWithinUnit
+            load = (load / (requestsWithinUnitForLoad10 * processes)) * 1.0
+            load = Math.trunc(load * 100) / 100
+            if (server.load5s !== load) {
+                server.load5s = load
+                modified = true
+            }
+
+            /*  calculate load average over last 1 minute  */
             loadAvg1.push(requestsWithinUnit)
             if (loadAvg1.length > 1 * ((60 * 1000) / loadAccountUnit))
                 loadAvg1.shift()
-            loadAvg5.push(requestsWithinUnit)
-            if (loadAvg5.length > 5 * ((60 * 1000) / loadAccountUnit))
-                loadAvg5.shift()
-            loadAvg15.push(requestsWithinUnit)
-            if (loadAvg15.length > 15 * ((60 * 1000) / loadAccountUnit))
-                loadAvg15.shift()
-            requestsWithinUnit = 0
-            let modified = false
-
-            /*  calculate load average over last 1 minute  */
-            let load = loadAvg1.reduce((sum, val) => sum + val, 0) / loadAvg1.length
+            load = loadAvg1.reduce((sum, val) => sum + val, 0) / loadAvg1.length
             load = (load / (requestsWithinUnitForLoad10 * processes)) * 1.0
             load = Math.trunc(load * 100) / 100
-            if (server.load1 !== load) {
-                server.load1 = load
+            if (server.load1m !== load) {
+                server.load1m = load
                 modified = true
             }
 
             /*  calculate load average over last 5 minutes  */
+            loadAvg5.push(requestsWithinUnit)
+            if (loadAvg5.length > 5 * ((60 * 1000) / loadAccountUnit))
+                loadAvg5.shift()
             load = loadAvg5.reduce((sum, val) => sum + val, 0) / loadAvg5.length
             load = (load / (requestsWithinUnitForLoad10 * processes)) * 1.0
             load = Math.trunc(load * 100) / 100
-            if (server.load5 !== load) {
-                server.load5 = load
+            if (server.load5m !== load) {
+                server.load5m = load
                 modified = true
             }
 
             /*  calculate load average over last 15 minutes  */
+            loadAvg15.push(requestsWithinUnit)
+            if (loadAvg15.length > 15 * ((60 * 1000) / loadAccountUnit))
+                loadAvg15.shift()
             load = loadAvg15.reduce((sum, val) => sum + val, 0) / loadAvg15.length
             load = (load / (requestsWithinUnitForLoad10 * processes)) * 1.0
             load = Math.trunc(load * 100) / 100
-            if (server.load15 !== load) {
-                server.load15 = load
+            if (server.load15m !== load) {
+                server.load15m = load
                 modified = true
             }
+
+            /*  reset requests within unit  */
+            requestsWithinUnit = 0
 
             /*  on any changes to the server object, record the change  */
             if (modified)
                 sub.scopeRecord("Server", 0, "update", "direct", "one")
         }, loadAccountUnit)
+        bus.subscribe("client-requests", (num) => {
+            requestsWithinUnit++
+        })
         bus.subscribe("client-connections", (num) => {
             server.clients += num
             if (server.clients < 0)
                 server.clients = 0
             sub.scopeRecord("Server", 0, "update", "direct", "one")
-        })
-        bus.subscribe("client-requests", (num) => {
-            requestsWithinUnit++
         })
 
         /*  mixin GraphQL subscription into schema and resolver  */
