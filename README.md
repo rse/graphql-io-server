@@ -41,40 +41,30 @@ $ npm install graphql-io-server
 Usage
 -----
 
-Simple Hello World server-side
-(see complete [Hello World](https://github.com/rse/graphql-io/blob/master/sample/1-hello/sample.js) sample for also client-side
-and all [Samples](https://github.com/rse/graphql-io/tree/master/sample/) for more elaborate samples):
-
-
 ```js
-(async () => {
+/*  all-in-one  */
+import { Server } from "graphql-io"
 
-    /*  Hello World Server  */
-    const { Server } = require("graphql-io-server")
-    const sv = new Server({ url: "http://127.0.0.1:12345/api" })
-    sv.on("debug", ({ log }) => console.log(log))
-    sv.at("graphql-resolver", () => ({
-        Root: {
-            hello: [ `
-                #   hello world
-                hello(name: String): String`,
-                (obj, args, ctx, info) => {
-                    return args.name ? args.name : "world"
-                }
-            ]
-        }
-    }))
-    await sv.start()
-
-})().catch((err) => {
-    console.log("ERROR", err)
-})
+/*  client-side only  */
+import { Server } from "graphql-io-server"
 ```
 
-Application Programming Interface (API)
----------------------------------------
+See the [TypeScript type definition of the GraphQL-IO-Server API](src/graphql-io.d.ts) for details.
 
-See the [TypeScript type definition of the GraphQL-IO-Client API](src/graphql-io.d.ts) for details.
+Sample
+------
+
+```js
+/*  Hello World Server  */
+const { Server } = require("graphql-io-server")
+const server = new Server({ url: "http://127.0.0.1:12345/api" })
+server.at("graphql-resolver", () => ({
+    Root: { hello: [ "hello: String", () => "world" ] }
+}))
+await server.start()
+```
+
+For more elaborate samples, check out the [Samples](https://github.com/rse/graphql-io/tree/master/sample/) folder.
 
 License
 -------
