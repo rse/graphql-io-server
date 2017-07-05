@@ -41,8 +41,10 @@ $ npm install graphql-io-server
 Usage
 -----
 
-Simple [Hello World Server](https://github.com/rse/graphql-io-server/blob/master/sample/hello.js)
-(see [Hello World Client](https://github.com/rse/graphql-io-client/blob/master/sample/hello.js) for client-side):
+Simple Hello World server-side
+(see complete [Hello World](https://github.com/rse/graphql-io/blob/master/sample/1-hello/sample.js) sample for also client-side
+and all [Samples](https://github.com/rse/graphql-io/tree/master/sample/) for more elaborate samples):
+
 
 ```js
 (async () => {
@@ -68,9 +70,6 @@ Simple [Hello World Server](https://github.com/rse/graphql-io-server/blob/master
     console.log("ERROR", err)
 })
 ```
-
-For a more elaborate example, see [Client Sample](https://github.com/rse/graphql-io-client/blob/master/sample/sample.js)
-an [Server Sample](https://github.com/rse/graphql-io-server/blob/master/sample/sample.js), too.
 
 Application Programming Interface (API)
 ---------------------------------------
