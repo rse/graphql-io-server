@@ -311,6 +311,7 @@ export default class GraphQLService {
                                 try { wsf.send({ type: "GRAPHQL-NOTIFY", data: sids }) }
                                 catch (ex) { void (ex) }
                             })
+                            this.hook("client-connect", "none", { ctx, ws, wsf, req, peer })
                             this._.bus.publish("client-connections", +1)
                         },
 
@@ -319,6 +320,7 @@ export default class GraphQLService {
                             let peer = this._.server.peer(req)
                             let cid = `${peer.addr}:${peer.port}`
                             let proto = `WebSocket/${ws.protocolVersion}+HTTP/${req.httpVersion}`
+                            this.hook("client-disconnect", "none", { ctx, ws, req, peer })
                             this._.bus.publish("client-connections", -1)
                             this.debug(1, `disconnect: peer=${cid}, method=${endpointMethod}, ` +
                                 `url=${endpointURL}, protocol=${proto}`)
@@ -342,6 +344,7 @@ export default class GraphQLService {
                     return reply().code(204)
 
                 /*  load accounting  */
+                this.hook("client-request", "none", { request, ws })
                 this._.bus.publish("client-requests", +1)
 
                 /*  determine request  */
@@ -379,16 +382,19 @@ export default class GraphQLService {
                     let ctx = { tx, scope, peerId, accountId, sessionId }
 
                     /*  execute the GraphQL query against the GraphQL schema  */
+                    this.hook("graphql-query", "none", { schema: schemaExec, query, variables, operation, ctx })
                     return GraphQL.graphql(schemaExec, query, null, ctx, variables, operation)
                 }).then((result) => {
                     /*  success/commit  */
                     if (scope)
                         scope.commit()
+                    this.hook("graphql-result", "none", { schema: schemaExec, query, variables, operation, result })
                     reply(result).code(200)
                 }).catch((result) => {
                     /*  error/rollback  */
                     if (scope)
                         scope.reject()
+                    this.hook("graphql-result", "none", { schema: schemaExec, query, variables, operation, result })
                     reply(result)
                 })
             }
