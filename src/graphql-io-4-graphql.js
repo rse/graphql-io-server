@@ -180,9 +180,11 @@ export default class GraphQLService {
         })
         let requests = []
         let accountingInterval = 5 * 1000
+        this._.timerLoad = null
         if (cluster.isMaster) {
             this._.timerLoad = setInterval(async () => {
                 /*  load server instance  */
+                await this._.kvs.acquire()
                 let server = await this._.kvs.get("server")
 
                 /*  determine system load  */
@@ -215,6 +217,7 @@ export default class GraphQLService {
 
                 /*  save server instance  */
                 await this._.kvs.put("server", server)
+                await this._.kvs.release()
 
                 /*  notify about change  */
                 this._.sub.scopeRecord("Server", 0, "update", "direct", "one")
@@ -236,9 +239,11 @@ export default class GraphQLService {
                     this._.timerConn = null
 
                     /*  update server instance  */
+                    await this._.kvs.acquire()
                     let server = await this._.kvs.get("server")
                     server.clients = clients
                     await this._.kvs.put("server", server)
+                    await this._.kvs.release()
 
                     /*  notify about change  */
                     this._.sub.scopeRecord("Server", 0, "update", "direct", "one")
