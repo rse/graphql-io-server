@@ -22,9 +22,6 @@
 **  SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-/*  standard requirements  */
-import cluster           from "cluster"
-
 /*  external requirements  */
 import * as GraphQL      from "graphql"
 import * as GraphQLTools from "graphql-tools"
@@ -33,6 +30,7 @@ import GraphQLSubscribe  from "graphql-tools-subscribe"
 import Boom              from "boom"
 import textframe         from "textframe"
 import PubSub            from "ipc-pubsub"
+import SysLoad           from "sysload"
 
 /*  internal requirements  */
 import pkg               from "../package.json"
@@ -131,109 +129,102 @@ export default class GraphQLService {
             type Server {
                 #   name of GraphQL-IO Server
                 name:    String
+
                 #   version of GraphQL-IO Server
                 version: String
-                #   load average within last 5 seconds in request/second
-                load5s:  Float
-                #   load average within last 1 minute in request/second
-                load1m:  Float
-                #   load average within last 5 minutes in request/second
-                load5m:  Float
-                #   load average within last 15 minutes in request/second
-                load15m: Float
-                #   number of currently connected clients
+
+                #   number of client connections
+                #   (updates on demand, every 1s at maximum)
                 clients: Int
+
+                #   application load averages (in requests/second) within last 10s, 1m, 10m, 1h, 10h
+                #   (updates regularly, every 5s)
+                requests: [Float]!
+
+                #   system load averages (in CPU percent) within last 10s, 1m, 10m, 1h, 10h
+                #   (updates regularly, every 5s)
+                load: [Float]!
             }
         `)
         let server = {
-            name:    pkg.name,
-            version: pkg.version,
-            load5s:  0.0,
-            load1m:  0.0,
-            load5m:  0.0,
-            load15m: 0.0,
-            clients: 0
+            name:     pkg.name,
+            version:  pkg.version,
+            load:     [ 0, 0, 0, 0, 0 ],
+            requests: [ 0, 0, 0, 0, 0 ],
+            clients:  0
         }
         mixinResolver("Root", "_Server", (obj, args, ctx, info) => {
             ctx.scope.record("Server", 0, "read", "direct", "one")
             return server
         })
 
-        /*  perform load accounting  */
-        let processes = 1
-        if (cluster.isMaster) {
-            cluster.on("exit", () => { processes-- })
-            cluster.on("fork", () => { processes++ })
-        }
+        /*  perform system load and application load accounting  */
+        this._.sysload = new SysLoad({
+            "load10s":                   10 * 1,
+            "load1m":                6 * 10 * 1,
+            "load10m":          10 * 6 * 10 * 1,
+            "load1h":       6 * 10 * 6 * 10 * 1,
+            "load10h": 10 * 6 * 10 * 6 * 10 * 1
+        })
+        this._.sysload.start()
         let requestsWithinUnit = 0
-        let requestsWithinUnitForLoad10 = 5 /* sec */ * 1 /* requests/sec  */
-        let loadAccountUnit = 5 * 1000
-        let loadAvg1  = []
-        let loadAvg5  = []
-        let loadAvg15 = []
-        this._.loadTimer = setInterval(() => {
-            let modified = false
-
-            /*  calculate load average over last 5 seconds  */
-            let load = requestsWithinUnit
-            load = (load / (requestsWithinUnitForLoad10 * processes)) * 1.0
-            load = Math.trunc(load * 100) / 100
-            if (server.load5s !== load) {
-                server.load5s = load
-                modified = true
-            }
-
-            /*  calculate load average over last 1 minute  */
-            loadAvg1.push(requestsWithinUnit)
-            if (loadAvg1.length > 1 * ((60 * 1000) / loadAccountUnit))
-                loadAvg1.shift()
-            load = loadAvg1.reduce((sum, val) => sum + val, 0) / loadAvg1.length
-            load = (load / (requestsWithinUnitForLoad10 * processes)) * 1.0
-            load = Math.trunc(load * 100) / 100
-            if (server.load1m !== load) {
-                server.load1m = load
-                modified = true
-            }
-
-            /*  calculate load average over last 5 minutes  */
-            loadAvg5.push(requestsWithinUnit)
-            if (loadAvg5.length > 5 * ((60 * 1000) / loadAccountUnit))
-                loadAvg5.shift()
-            load = loadAvg5.reduce((sum, val) => sum + val, 0) / loadAvg5.length
-            load = (load / (requestsWithinUnitForLoad10 * processes)) * 1.0
-            load = Math.trunc(load * 100) / 100
-            if (server.load5m !== load) {
-                server.load5m = load
-                modified = true
-            }
-
-            /*  calculate load average over last 15 minutes  */
-            loadAvg15.push(requestsWithinUnit)
-            if (loadAvg15.length > 15 * ((60 * 1000) / loadAccountUnit))
-                loadAvg15.shift()
-            load = loadAvg15.reduce((sum, val) => sum + val, 0) / loadAvg15.length
-            load = (load / (requestsWithinUnitForLoad10 * processes)) * 1.0
-            load = Math.trunc(load * 100) / 100
-            if (server.load15m !== load) {
-                server.load15m = load
-                modified = true
-            }
-
-            /*  reset requests within unit  */
-            requestsWithinUnit = 0
-
-            /*  on any changes to the server object, record the change  */
-            if (modified)
-                this._.sub.scopeRecord("Server", 0, "update", "direct", "one")
-        }, loadAccountUnit)
         this._.bus.subscribe("client-requests", (num) => {
             requestsWithinUnit++
         })
-        this._.bus.subscribe("client-connections", (num) => {
-            server.clients += num
-            if (server.clients < 0)
-                server.clients = 0
+        let requests = []
+        let accountingInterval = 5 * 1000
+        this._.timerLoad = setInterval(() => {
+            /*  determine system load  */
+            let load = this._.sysload.average()
+            server.load[0] = load.load10s
+            server.load[1] = load.load1m
+            server.load[2] = load.load10m
+            server.load[3] = load.load1h
+            server.load[4] = load.load10h
+
+            /*  determine application load  */
+            const account = (idx, duration, req) => {
+                if (requests[idx] === undefined)
+                    requests[idx] = []
+                requests[idx].push(req)
+                if (requests[idx].length > (duration / accountingInterval))
+                    requests[idx].shift()
+                load = requests[idx].reduce((sum, val) => sum + val, 0) / requests[idx].length
+                load = load / (accountingInterval / 1000)
+                load = Math.trunc(load * 10) / 10
+                if (server.requests[idx] !== load)
+                    server.requests[idx] = load
+            }
+            account(0,           10 * 1000, requestsWithinUnit)
+            account(1,           60 * 1000, requestsWithinUnit)
+            account(2,      10 * 60 * 1000, requestsWithinUnit)
+            account(3,      60 * 60 * 1000, requestsWithinUnit)
+            account(4, 10 * 60 * 60 * 1000, requestsWithinUnit)
+            requestsWithinUnit = 0
+
+            /*  notify about change  */
             this._.sub.scopeRecord("Server", 0, "update", "direct", "one")
+        }, accountingInterval)
+
+        /*  perform client connection tracking  */
+        let clients = 0
+        this._.timerConn = null
+        this._.bus.subscribe("client-connections", (num) => {
+            /*  account client connection  */
+            clients += num
+            if (clients < 0)
+                clients = 0
+
+            /*  perform reporting delay  */
+            if (this._.timerConn !== null)
+                clearTimeout(this._.timerConn)
+            this._.timerConn = setTimeout(() => {
+                this._.timerConn = null
+
+                /*  change report and notify about change  */
+                server.clients = clients
+                this._.sub.scopeRecord("Server", 0, "update", "direct", "one")
+            }, 1 * 1000)
         })
 
         /*  mixin GraphQL subscription into schema and resolver  */
@@ -380,7 +371,10 @@ export default class GraphQLService {
         })
     }
     static async stop () {
-        clearTimeout(this._.loadTimer)
+        if (this._timerLoad !== null)
+            clearTimeout(this._.timerLoad)
+        if (this._timerConn !== null)
+            clearTimeout(this._.timerConn)
         await this._.sub.close()
         this._.sub = null
         await this._.bus.close()
