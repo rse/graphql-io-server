@@ -216,15 +216,15 @@ export default class GraphQLService {
                 clients = 0
 
             /*  perform reporting delay  */
-            if (this._.timerConn !== null)
-                clearTimeout(this._.timerConn)
-            this._.timerConn = setTimeout(() => {
-                this._.timerConn = null
+            if (this._.timerConn === null) {
+                this._.timerConn = setTimeout(() => {
+                    this._.timerConn = null
 
-                /*  change report and notify about change  */
-                server.clients = clients
-                this._.sub.scopeRecord("Server", 0, "update", "direct", "one")
-            }, 1 * 1000)
+                    /*  change report and notify about change  */
+                    server.clients = clients
+                    this._.sub.scopeRecord("Server", 0, "update", "direct", "one")
+                }, 1 * 1000)
+            }
         })
 
         /*  mixin GraphQL subscription into schema and resolver  */
