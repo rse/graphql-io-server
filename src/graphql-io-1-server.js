@@ -224,6 +224,9 @@ export default class Server extends StdAPI {
         await GraphQL.start.call(this)
         await BLOB.start.call(this)
 
+        /*  allow application to hook into  */
+        this.hook("server-start", "none", server)
+
         /*  start the HAPI service  */
         return new Promise((resolve, reject) => {
             server.start((err) => {
@@ -248,6 +251,9 @@ export default class Server extends StdAPI {
                 resolve()
             })
         })
+
+        /*  allow application to hook into  */
+        this.hook("server-stop", "none", this._.server)
 
         /*  teardown services  */
         await UI.stop.call(this)
