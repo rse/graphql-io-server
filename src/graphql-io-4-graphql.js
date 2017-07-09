@@ -30,7 +30,9 @@ import GraphQLSubscribe  from "graphql-tools-subscribe"
 import Boom              from "boom"
 import textframe         from "textframe"
 import PubSub            from "ipc-pubsub"
+import KeyVal            from "ipc-keyval"
 import SysLoad           from "sysload"
+import cluster           from "cluster"
 
 /*  internal requirements  */
 import pkg               from "../package.json"
@@ -41,6 +43,10 @@ export default class GraphQLService {
         /*  setup IPC communication bus  */
         this._.bus = new PubSub(this.$.pubsub)
         await this._.bus.open()
+
+        /*  setup IPC key-value store  */
+        this._.kvs = new KeyVal(this.$.keyval)
+        await this._.kvs.open()
 
         /*  bootstrap GraphQL subscription framework  */
         this._.sub = new GraphQLSubscribe({
@@ -153,9 +159,10 @@ export default class GraphQLService {
             requests: [ 0, 0, 0, 0, 0 ],
             clients:  0
         }
+        this._.kvs.put("server", server)
         mixinResolver("Root", "_Server", (obj, args, ctx, info) => {
             ctx.scope.record("Server", 0, "read", "direct", "one")
-            return server
+            return this._.kvs.get("server")
         })
 
         /*  perform system load and application load accounting  */
@@ -173,38 +180,46 @@ export default class GraphQLService {
         })
         let requests = []
         let accountingInterval = 5 * 1000
-        this._.timerLoad = setInterval(() => {
-            /*  determine system load  */
-            let load = this._.sysload.average()
-            server.load[0] = load.load10s
-            server.load[1] = load.load1m
-            server.load[2] = load.load10m
-            server.load[3] = load.load1h
-            server.load[4] = load.load10h
+        if (cluster.isMaster) {
+            this._.timerLoad = setInterval(async () => {
+                /*  load server instance  */
+                let server = await this._.kvs.get("server")
 
-            /*  determine application load  */
-            const account = (idx, duration, req) => {
-                if (requests[idx] === undefined)
-                    requests[idx] = []
-                requests[idx].push(req)
-                if (requests[idx].length > (duration / accountingInterval))
-                    requests[idx].shift()
-                load = requests[idx].reduce((sum, val) => sum + val, 0) / requests[idx].length
-                load = load / (accountingInterval / 1000)
-                load = Math.trunc(load * 10) / 10
-                if (server.requests[idx] !== load)
-                    server.requests[idx] = load
-            }
-            account(0,           10 * 1000, requestsWithinUnit)
-            account(1,           60 * 1000, requestsWithinUnit)
-            account(2,      10 * 60 * 1000, requestsWithinUnit)
-            account(3,      60 * 60 * 1000, requestsWithinUnit)
-            account(4, 10 * 60 * 60 * 1000, requestsWithinUnit)
-            requestsWithinUnit = 0
+                /*  determine system load  */
+                let load = this._.sysload.average()
+                server.load[0] = load.load10s
+                server.load[1] = load.load1m
+                server.load[2] = load.load10m
+                server.load[3] = load.load1h
+                server.load[4] = load.load10h
 
-            /*  notify about change  */
-            this._.sub.scopeRecord("Server", 0, "update", "direct", "one")
-        }, accountingInterval)
+                /*  determine application load  */
+                const account = (idx, duration, req) => {
+                    if (requests[idx] === undefined)
+                        requests[idx] = []
+                    requests[idx].push(req)
+                    if (requests[idx].length > (duration / accountingInterval))
+                        requests[idx].shift()
+                    load = requests[idx].reduce((sum, val) => sum + val, 0) / requests[idx].length
+                    load = load / (accountingInterval / 1000)
+                    load = Math.trunc(load * 10) / 10
+                    if (server.requests[idx] !== load)
+                        server.requests[idx] = load
+                }
+                account(0,           10 * 1000, requestsWithinUnit)
+                account(1,           60 * 1000, requestsWithinUnit)
+                account(2,      10 * 60 * 1000, requestsWithinUnit)
+                account(3,      60 * 60 * 1000, requestsWithinUnit)
+                account(4, 10 * 60 * 60 * 1000, requestsWithinUnit)
+                requestsWithinUnit = 0
+
+                /*  save server instance  */
+                await this._.kvs.put("server", server)
+
+                /*  notify about change  */
+                this._.sub.scopeRecord("Server", 0, "update", "direct", "one")
+            }, accountingInterval)
+        }
 
         /*  perform client connection tracking  */
         let clients = 0
@@ -217,11 +232,15 @@ export default class GraphQLService {
 
             /*  perform reporting delay  */
             if (this._.timerConn === null) {
-                this._.timerConn = setTimeout(() => {
+                this._.timerConn = setTimeout(async () => {
                     this._.timerConn = null
 
-                    /*  change report and notify about change  */
+                    /*  update server instance  */
+                    let server = await this._.kvs.get("server")
                     server.clients = clients
+                    await this._.kvs.put("server", server)
+
+                    /*  notify about change  */
                     this._.sub.scopeRecord("Server", 0, "update", "direct", "one")
                 }, 1 * 1000)
             }
@@ -371,12 +390,18 @@ export default class GraphQLService {
         })
     }
     static async stop () {
-        if (this._timerLoad !== null)
+        if (this._timerLoad !== null) {
             clearTimeout(this._.timerLoad)
-        if (this._timerConn !== null)
+            this._timerLoad = null
+        }
+        if (this._timerConn !== null) {
             clearTimeout(this._.timerConn)
+            this._timerConn = null
+        }
         await this._.sub.close()
         this._.sub = null
+        await this._.kvs.close()
+        this._.kvs = null
         await this._.bus.close()
         this._.bus = null
     }
