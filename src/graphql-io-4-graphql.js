@@ -41,17 +41,17 @@ import pkg               from "../package.json"
 export default class GraphQLService {
     static async start () {
         /*  setup IPC communication bus  */
-        this._.bus = new PubSub(this.$.pubsub)
+        this._.bus = new PubSub(this.$.pubsub.match(/^mpm:/) ? this.$.pubsub + ":bus" : this.$.pubsub)
         await this._.bus.open()
 
         /*  setup IPC key-value store  */
-        this._.kvs = new KeyVal(this.$.keyval)
+        this._.kvs = new KeyVal(this.$.keyval.match(/^mpm:/) ? this.$.keyval + ":kvs" : this.$.keyval)
         await this._.kvs.open()
 
         /*  bootstrap GraphQL subscription framework  */
         this._.sub = new GraphQLSubscribe({
-            pubsub: this.$.pubsub,
-            keyval: this.$.keyval
+            pubsub: this.$.pubsub.match(/^mpm:/) ? this.$.pubsub + ":subscribe" : this.$.pubsub,
+            keyval: this.$.keyval.match(/^mpm:/) ? this.$.keyval + ":subscribe" : this.$.keyval
         })
         await this._.sub.open()
 
