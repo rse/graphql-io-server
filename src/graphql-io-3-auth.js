@@ -67,7 +67,7 @@ export default class Auth {
                 /*  provide token as a cookie  */
                 reply.state(`${this.$.prefix}Token`, jwt, {
                     ttl:          this.$.ttl,
-                    path:         this._.url.path,
+                    path:         this._.prefix,
                     encoding:     "none",
                     isHttpOnly:   true,
                     isSecure:     false,
@@ -87,7 +87,7 @@ export default class Auth {
         /*  provide (explicit) login endpoint  */
         this._.server.route({
             method: "POST",
-            path:   `${this._.url.path}${this.$.path.login}`,
+            path:   this.$.path.login,
             config: {
                 auth:     false,
                 payload:  { output: "data", parse: true, allow: "application/json" },
@@ -136,7 +136,7 @@ export default class Auth {
                 let payload = { token: jwt, peer: peerId }
                 reply(payload).code(201).state(`${this.$.prefix}Token`, jwt, {
                     ttl:          this.$.ttl,
-                    path:         this._.url.path,
+                    path:         this._.prefix,
                     encoding:     "none",
                     isHttpOnly:   true,
                     isSecure:     false,
@@ -149,7 +149,7 @@ export default class Auth {
         /*  provide session detail gathering endpoint  */
         this._.server.route({
             method: "GET",
-            path:   `${this._.url.path}${this.$.path.session}`,
+            path:   this.$.path.session,
             config: {
                 auth: { mode: "try", strategy: "jwt" }
             },
@@ -185,7 +185,7 @@ export default class Auth {
         /*  provide logout endpoint  */
         this._.server.route({
             method: "GET",
-            path:   `${this._.url.path}${this.$.path.logout}`,
+            path:   this.$.path.logout,
             config: {
                 auth: false
             },
@@ -204,7 +204,7 @@ export default class Auth {
                 /*  destroy cookie  */
                 reply().code(204).state(`${this.$.prefix}Token`, "", {
                     ttl:          0,
-                    path:         this._.url.path,
+                    path:         this._.prefix,
                     encoding:     "none",
                     isHttpOnly:   true,
                     isSecure:     false,

@@ -281,7 +281,7 @@ export default class GraphQLService {
 
         /*  establish the HAPI route for GraphQL  */
         let endpointMethod = "POST"
-        let endpointURL    = `${this._.url.path}${this.$.path.graph}`
+        let endpointURL    = this.$.path.graph
         this._.server.route({
             method: endpointMethod,
             path:   endpointURL,

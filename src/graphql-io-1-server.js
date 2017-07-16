@@ -43,6 +43,7 @@ import HAPIPeer          from "hapi-plugin-peer"
 import generatePassword  from "generate-password"
 import HAPIAuthJWT2      from "hapi-auth-jwt2"
 import JWT               from "jsonwebtoken"
+import commonPathPrefix  from "common-path-prefix"
 
 /*  internal dependencies  */
 import UI                from "./graphql-io-2-ui"
@@ -54,29 +55,31 @@ import BLOB              from "./graphql-io-5-blob"
 export default class Server extends StdAPI {
     constructor (options) {
         super(options, {
-            prefix:      [ "string", "GraphQL-IO-" ],
-            name:        [ "string", "GraphQL-IO-Server" ],
-            url:         [ "/^https?:\\/\\/.+?:\\d+(?:\\/.*)?$/", "http://127.0.0.1:8080/api" ],
+            prefix:       [ "string", "GraphQL-IO-" ],
+            name:         [ "string", "GraphQL-IO-Server" ],
+            url:          [ "/^https?:\\/\\/.+?:\\d+$/", "http://127.0.0.1:8080" ],
             path: {
-                login:   [ "/^(?:|\\/.+)$/", "/auth/login" ],
-                session: [ "/^(?:|\\/.+)$/", "/auth/session" ],
-                logout:  [ "/^(?:|\\/.+)$/", "/auth/logout" ],
-                graph:   [ "/^(?:|\\/.+)$/", "/data/graph" ],
-                blob:    [ "/^(?:|\\/.+)$/", "/data/blob" ]
+                frontend: [ "/^\\/.*$/", "/" ],
+                graphiql: [ "/^\\/.+$/", "/api" ],
+                login:    [ "/^\\/.+$/", "/api/auth/login" ],
+                session:  [ "/^\\/.+$/", "/api/auth/session" ],
+                logout:   [ "/^\\/.+$/", "/api/auth/logout" ],
+                graph:    [ "/^\\/.+$/", "/api/data/graph" ],
+                blob:     [ "/^\\/.+$/", "/api/data/blob" ]
             },
             tls: {
-                crt:     [ "string", "" ],
-                key:     [ "string", "" ]
+                crt:      [ "string", "" ],
+                key:      [ "string", "" ]
             },
-            secret:      [ "string", generatePassword.generate({ length: 16, numbers: true }) ],
-            ttl:         [ "number", 7 * 24 * 60 * 60 * 1000 ],
-            pubsub:      [ "string", "spm" ],
-            keyval:      [ "string", "spm" ],
-            frontend:    [ "string", "" ],
-            graphiql:    [ "boolean", true ],
-            encoding:    [ "/^(?:cbor|msgpack|json)$/", "json" ],
-            debug:       [ "number", 0 ],
-            example:     [ "string",
+            secret:       [ "string", generatePassword.generate({ length: 16, numbers: true }) ],
+            ttl:          [ "number", 7 * 24 * 60 * 60 * 1000 ],
+            pubsub:       [ "string", "spm" ],
+            keyval:       [ "string", "spm" ],
+            frontend:     [ "string", "" ],
+            graphiql:     [ "boolean", true ],
+            encoding:     [ "/^(?:cbor|msgpack|json)$/", "json" ],
+            debug:        [ "number", 0 ],
+            example:      [ "string",
                 "query Example {\n" +
                 "    session {\n" +
                 "        peerId accountId sessionId\n" +
@@ -88,10 +91,22 @@ export default class Server extends StdAPI {
         /*  initialize internal state  */
         this._.nsUUID = new UUID(5, "ns:URL", "http://graphql-io.com/ns/")
         this._.server = null
+        this._.prefix = null
     }
 
     /*  start the service  */
     async start () {
+        /*  determine common URL path prefix  */
+        this._.prefix = commonPathPrefix([
+            this.$.path.login,
+            this.$.path.session,
+            this.$.path.logout,
+            this.$.path.graph,
+            this.$.path.blob
+        ], "/")
+        if (this._.prefix === "")
+            this._.prefix = "/"
+
         /*  establish a new server context  */
         let server = new HAPI.Server()
         this._.server = server
@@ -140,7 +155,7 @@ export default class Server extends StdAPI {
             peerId: true,
             cookieName: `${this.$.prefix}Peer`,
             cookieOptions: {
-                path: this._.url.path,
+                path: this._.prefix,
                 isSameSite: "Strict"
             }
         }})
