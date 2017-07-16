@@ -154,8 +154,6 @@ export default class Auth {
                 auth: { mode: "try", strategy: "jwt" }
             },
             handler: async (request, reply) => {
-                /* eslint no-console: off */
-                console.log(request.auth)
                 /*  fetch credentials  */
                 let ctx = {
                     error:     null,
