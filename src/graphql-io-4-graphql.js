@@ -299,7 +299,7 @@ export default class GraphQLService {
                         frameResponse: "GRAPHQL-RESPONSE",
 
                         /*  on WebSocket connection, establish subscription connection  */
-                        connect: ({ ctx, ws, wsf, req }) => {
+                        connect: async ({ ctx, ws, wsf, req }) => {
                             let peer = this._.server.peer(req)
                             let cid = `${peer.addr}:${peer.port}`
                             let proto = `WebSocket/${ws.protocolVersion}+HTTP/${req.httpVersion}`
@@ -311,16 +311,16 @@ export default class GraphQLService {
                                 try { wsf.send({ type: "GRAPHQL-NOTIFY", data: sids }) }
                                 catch (ex) { void (ex) }
                             })
-                            this.hook("client-connect", "none", { ctx, ws, wsf, req, peer })
+                            await this.hook("client-connect", "promise", { ctx, ws, wsf, req, peer })
                             this._.bus.publish("client-connections", +1)
                         },
 
                         /*  on WebSocket disconnection, destroy subscription connection  */
-                        disconnect: ({ ctx, ws, req }) => {
+                        disconnect: async ({ ctx, ws, req }) => {
                             let peer = this._.server.peer(req)
                             let cid = `${peer.addr}:${peer.port}`
                             let proto = `WebSocket/${ws.protocolVersion}+HTTP/${req.httpVersion}`
-                            this.hook("client-disconnect", "none", { ctx, ws, req, peer })
+                            await this.hook("client-disconnect", "promise", { ctx, ws, req, peer })
                             this._.bus.publish("client-connections", -1)
                             this.debug(1, `disconnect: peer=${cid}, method=${endpointMethod}, ` +
                                 `url=${endpointURL}, protocol=${proto}`)
@@ -334,7 +334,7 @@ export default class GraphQLService {
                     }`
                 }
             },
-            handler: (request, reply) => {
+            handler: async (request, reply) => {
                 /*  determine optional WebSocket information  */
                 let ws = request.websocket()
 
@@ -344,7 +344,7 @@ export default class GraphQLService {
                     return reply().code(204)
 
                 /*  load accounting  */
-                this.hook("client-request", "none", { request, ws })
+                await this.hook("client-request", "promise", { request, ws })
                 this._.bus.publish("client-requests", +1)
 
                 /*  determine request  */
@@ -377,24 +377,24 @@ export default class GraphQLService {
                 }
 
                 /*  execute GraphQL operation within a transaction  */
-                return transaction((tx) => {
+                return transaction(async (tx) => {
                     /*  create context for GraphQL resolver functions  */
                     let ctx = { tx, scope, peerId, accountId, sessionId }
 
                     /*  execute the GraphQL query against the GraphQL schema  */
-                    this.hook("graphql-query", "none", { schema: schemaExec, query, variables, operation, ctx })
+                    await this.hook("graphql-query", "promise", { schema: schemaExec, query, variables, operation, ctx })
                     return GraphQL.graphql(schemaExec, query, null, ctx, variables, operation)
-                }).then((result) => {
+                }).then(async (result) => {
                     /*  success/commit  */
                     if (scope)
                         scope.commit()
-                    this.hook("graphql-result", "none", { schema: schemaExec, query, variables, operation, result })
+                    await this.hook("graphql-result", "promise", { schema: schemaExec, query, variables, operation, result })
                     reply(result).code(200)
-                }).catch((result) => {
+                }).catch(async (result) => {
                     /*  error/rollback  */
                     if (scope)
                         scope.reject()
-                    this.hook("graphql-result", "none", { schema: schemaExec, query, variables, operation, result })
+                    await this.hook("graphql-result", "promise", { schema: schemaExec, query, variables, operation, result })
                     reply(result)
                 })
             }

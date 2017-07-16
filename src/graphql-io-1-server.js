@@ -182,7 +182,7 @@ export default class Server extends StdAPI {
             cookieKey:     `${this.$.prefix}Token`,
             tokenType:     "JWT",
             validateFunc: (decoded, request, callback) => {
-                let result = this.hook("hapi:jwt-validate", "pass",
+                let result = this.hook("jwt-validate", "pass",
                     { error: null, result: true }, decoded, request)
                 callback(result.error, result.result, decoded)
             }
@@ -240,7 +240,7 @@ export default class Server extends StdAPI {
         await BLOB.start.call(this)
 
         /*  allow application to hook into  */
-        this.hook("server-start", "none", server)
+        await this.hook("server-start", "promise", server)
 
         /*  start the HAPI service  */
         return new Promise((resolve, reject) => {
@@ -268,7 +268,7 @@ export default class Server extends StdAPI {
         })
 
         /*  allow application to hook into  */
-        this.hook("server-stop", "none", this._.server)
+        await this.hook("server-stop", "promise", this._.server)
 
         /*  teardown services  */
         await UI.stop.call(this)

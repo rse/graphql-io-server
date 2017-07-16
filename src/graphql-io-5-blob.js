@@ -49,7 +49,7 @@ export default class BLOB {
                         accountId,
                         sessionId
                     }
-                    await this.hook("blob", ctx)
+                    await this.hook("blob", "promise", ctx)
                     if (ctx.error !== null)
                         return reply.unauthorized(`failed to determine BLOB information: ${ctx.error}`)
                     if (ctx.path !== null) {

@@ -34,14 +34,14 @@ export default class Auth {
                 /*  recognize peer by id  */
                 let { id: peerId } = request.peer()
                 let ctx = { error: null, peerId }
-                await this.hook("peer-recognize", "none", ctx)
+                await this.hook("peer-recognize", "promise", ctx)
                 if (ctx.error !== null)
                     return reply.unauthorized(`failed to handle peer: ${ctx.error}`)
                 peerId = ctx.peerId
 
                 /*  authenticate account via username/password  */
                 ctx = { error: null, accountId: null, username: null, password: null }
-                await this.hook("account-authenticate", "none", ctx)
+                await this.hook("account-authenticate", "promise", ctx)
                 if (ctx.error !== null)
                     return reply.unauthorized(`failed to authenticate username/password: ${ctx.error}`)
                 let accountId = ctx.accountId
@@ -50,7 +50,7 @@ export default class Auth {
 
                 /*  create new session  */
                 ctx = { error: null, sessionId: null, accountId, peerId, ttl: this.$.ttl }
-                await this.hook("session-create", "none", ctx)
+                await this.hook("session-create", "promise", ctx)
                 if (ctx.error !== null)
                     return reply.unauthorized(`failed to create new session: ${ctx.error}`)
                 let sessionId = ctx.sessionId
@@ -102,14 +102,14 @@ export default class Auth {
                 /*  recognize peer by id  */
                 let { id: peerId } = request.peer()
                 let ctx = { error: null, peerId }
-                await this.hook("peer-recognize", "none", ctx)
+                await this.hook("peer-recognize", "promise", ctx)
                 if (ctx.error !== null)
                     return reply.unauthorized(`failed to handle peer: ${ctx.error}`)
                 peerId = ctx.peerId
 
                 /*  authenticate account via username/password  */
                 ctx = { error: null, accountId: null, username, password }
-                await this.hook("account-authenticate", "none", ctx)
+                await this.hook("account-authenticate", "promise", ctx)
                 if (ctx.error !== null)
                     return reply.unauthorized(`failed to authenticate username/password: ${ctx.error}`)
                 let accountId = ctx.accountId
@@ -118,7 +118,7 @@ export default class Auth {
 
                 /*  create new session  */
                 ctx = { error: null, sessionId: null, accountId, peerId, ttl: this.$.ttl }
-                await this.hook("session-create", "none", ctx)
+                await this.hook("session-create", "promise", ctx)
                 if (ctx.error !== null)
                     return reply.unauthorized(`failed to create new session: ${ctx.error}`)
                 let sessionId = ctx.sessionId
@@ -166,7 +166,7 @@ export default class Auth {
                     ctx.accountId = request.auth.credentials.accountId
                     ctx.sessionId = request.auth.credentials.sessionId
                 }
-                await this.hook("session-details", "none", ctx)
+                await this.hook("session-details", "promise", ctx)
                 if (ctx.error !== null)
                     return reply.unauthorized(`failed to determine session: ${ctx.error}`)
                 let { peerId, accountId, sessionId } = ctx
@@ -194,7 +194,7 @@ export default class Auth {
                     && request.auth.credentials !== null) {
                     let { sessionId } = request.auth.credentials
                     let ctx = { error: null, sessionId }
-                    await this.hook("session-destroy", "none", ctx)
+                    await this.hook("session-destroy", "promise", ctx)
                     if (ctx.error !== null)
                         return reply.unauthorized(`failed to logout: ${ctx.error}`)
                 }
