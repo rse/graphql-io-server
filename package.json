@@ -53,7 +53,7 @@
         "sysload":                        "~0.9.1",
         "urijs":                          "~1.18.10",
         "pure-uuid":                      "~1.4.7",
-        "ducky":                          "~2.6.0",
+        "ducky":                          "~2.6.1",
         "mz":                             "~2.6.0"
     },
     "devDependencies": {
