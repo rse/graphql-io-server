@@ -24,7 +24,7 @@
         "graphql":                        "~0.10.5",
         "graphql-tools":                  "~1.1.0",
         "graphql-tools-sequelize":        "~1.3.6",
-        "graphql-tools-subscribe":        "~0.9.19",
+        "graphql-tools-subscribe":        "~0.9.20",
         "graphql-tools-types":            "~1.1.8",
         "http2":                          "~0.0.0",
         "hapi":                           "~16.4.3",
