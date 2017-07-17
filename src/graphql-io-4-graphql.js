@@ -70,7 +70,7 @@ export default class GraphQLService {
 
         /*  let application extend GraphQL schema and resolver  */
         let apiSchema   = this.hook("graphql-schema",   "concat")
-        let apiResolver = this.hook("graphql-resolver", "concat")
+        let apiResolver = this.hook("graphql-resolver", "concat", resolver)
 
         /*  extend schema  */
         apiSchema.forEach((api) => {
