@@ -47,7 +47,7 @@
         "ipc-pubsub":                     "~0.9.10",
         "ipc-keyval":                     "~0.9.14",
         "co":                             "~4.6.0",
-        "boom":                           "~5.1.0",
+        "boom":                           "~5.2.0",
         "bluebird":                       "~3.5.0",
         "textframe":                      "~0.9.1",
         "sysload":                        "~0.9.1",
@@ -79,7 +79,7 @@
         "eslint-plugin-standard":         "~3.0.1",
         "eslint-plugin-promise":          "~3.5.0",
         "eslint-plugin-import":           "~2.7.0",
-        "eslint-plugin-node":             "~5.1.0"
+        "eslint-plugin-node":             "~5.1.1"
     },
     "engines": {
         "node":                           ">=6.0.0"
