@@ -45,14 +45,14 @@ export default class UI {
                 path:   `${this.$.path.frontend.replace(/\/$/, "")}/{path*}`,
                 handler: {
                     directory: {
-                        path:  this.$.frontend,
-                        index: true,
-                        listing: false,
-                        showHidden: false,
-                        redirectToSlash: true,
-                        etagMethod: "hash",
+                        path:             this.$.frontend,
+                        index:            true,
+                        listing:          false,
+                        showHidden:       false,
+                        redirectToSlash:  true,
+                        etagMethod:       "hash",
                         lookupCompressed: true,
-                        lookupMap: { "gzip": ".gz", "br": ".br" }
+                        lookupMap:        { "gzip": ".gz", "br": ".br" }
                     }
                 }
             })
