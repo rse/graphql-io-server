@@ -271,10 +271,10 @@ export default class Server extends StdAPI {
         await this.hook("server-stop", "promise", this._.server)
 
         /*  teardown services  */
-        await UI.stop.call(this)
-        await Auth.stop.call(this)
-        await GraphQL.stop.call(this)
         await BLOB.stop.call(this)
+        await GraphQL.stop.call(this)
+        await Auth.stop.call(this)
+        await UI.stop.call(this)
 
         /*  finally destroy HAPI instance  */
         this._.server = null
