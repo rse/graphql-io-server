@@ -401,6 +401,7 @@ export default class GraphQLService {
         })
     }
     static async stop () {
+        /*  stop timers  */
         if (this._timerLoad !== null) {
             clearTimeout(this._.timerLoad)
             this._timerLoad = null
@@ -409,8 +410,12 @@ export default class GraphQLService {
             clearTimeout(this._.timerConn)
             this._timerConn = null
         }
+
+        /*  close GraphQL subscribe mechanism  */
         await this._.sub.close()
         this._.sub = null
+
+        /*  close IPC mechanisms  */
         await this._.kvs.close()
         this._.kvs = null
         await this._.bus.close()
