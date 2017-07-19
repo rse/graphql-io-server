@@ -131,13 +131,16 @@ export default class Server extends StdAPI {
 
         /*  configure the listening socket  */
         let hapiOpts = {
-            listener: listener,
-            address:  this._.url.hostname,
-            port:     this._.url.port
+            listener:   listener,
+            autoListen: false
         }
         if (withTLS)
             hapiOpts.tls = true
         server.connection(hapiOpts)
+
+        /*  start listening  */
+        listener.listen(this._.url.port, this._.url.hostname)
+        this._.listener = listener
 
         /*  register HAPI plugins  */
         const register = Bluebird.promisify(server.register, { context: server })
@@ -278,6 +281,9 @@ export default class Server extends StdAPI {
         await GraphQL.stop.call(this)
         await Auth.stop.call(this)
         await UI.stop.call(this)
+
+        /*  stop listening  */
+        this._.listener.close()
 
         /*  finally destroy HAPI instance  */
         this._.server = null
