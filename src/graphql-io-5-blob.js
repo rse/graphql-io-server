@@ -81,7 +81,6 @@ export default class BLOB {
         }
     }
     static async stop () {
-        /* FIXME */
     }
 }
 
