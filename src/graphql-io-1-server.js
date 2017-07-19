@@ -261,9 +261,12 @@ export default class Server extends StdAPI {
     async stop () {
         /*   stop the HAPI service  */
         this.debug(2, "gracefully stopping HAPI service")
-        await new Promise((resolve /*, reject */) => {
-            this._.server.root.stop({ timeout: 4 * 1000 }, () => {
-                resolve()
+        await new Promise((resolve, reject) => {
+            this._.server.root.stop({ timeout: 4 * 1000 }, (err) => {
+                if (err)
+                    reject(err)
+                else
+                    resolve()
             })
         })
 
