@@ -17,7 +17,7 @@
     "homepage": "https://github.com/rse/graphql-io-server",
     "bugs":     "https://github.com/rse/graphql-io-server/issues",
     "dependencies": {
-        "stdapi":                         "~0.9.5",
+        "stdapi":                         "~0.9.6",
         "graphql":                        "~0.11.7",
         "graphql-tools":                  "~2.2.1",
         "graphql-tools-sequelize":        "~1.3.10",
@@ -41,8 +41,8 @@
         "jsonwebtoken":                   "~8.0.1",
         "generate-password":              "~1.3.0",
         "common-path-prefix":             "~1.0.0",
-        "ipc-pubsub":                     "~0.9.12",
-        "ipc-keyval":                     "~0.9.16",
+        "ipc-pubsub":                     "~0.9.13",
+        "ipc-keyval":                     "~0.9.17",
         "co":                             "~4.6.0",
         "boom":                           "~6.0.0",
         "bluebird":                       "~3.5.1",
@@ -50,7 +50,7 @@
         "sysload":                        "~0.9.1",
         "urijs":                          "~1.19.0",
         "pure-uuid":                      "~1.4.8",
-        "ducky":                          "~2.6.1",
+        "ducky":                          "~2.6.2",
         "mz":                             "~2.7.0"
     },
     "devDependencies": {
