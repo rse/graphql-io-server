@@ -57,7 +57,7 @@ export default class Server extends StdAPI {
         super(options, {
             prefix:       [ "string", "GraphQL-IO-" ],
             name:         [ "string", "GraphQL-IO-Server" ],
-            url:          [ "/^https?:\\/\\/.+?:\\d+$/", "http://127.0.0.1:8080" ],
+            url:          [ "/^https?:\\/\\/.+?(?::\\d+)?$/", "http://127.0.0.1:8080" ],
             path: {
                 frontend: [ "/^\\/.*$/", "/" ],
                 graphiql: [ "/^\\/.+$/", "/api" ],
@@ -113,6 +113,10 @@ export default class Server extends StdAPI {
 
         /*  parse the URL  */
         this._.url = URI.parse(this.$.url)
+        if (this._.url.port === null)
+            this._.url.port = this._.url.protocol === "https" ? 443 : 80
+        if (typeof this._.url.port === "string")
+            this._.url.port = parseInt(this._.url.port)
         let withTLS = (this.$.tls.crt !== "" && this.$.tls.key !== "")
         if (!withTLS && this._.url.protocol === "https")
             throw new Error("HTTPS requires TLS Certificate/Key")
