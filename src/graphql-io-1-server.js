@@ -96,6 +96,9 @@ export default class Server extends StdAPI {
 
     /*  start the service  */
     async start () {
+        /*  give others still a chance to reconfigure us  */
+        await this.hook("server-configure", "promise", this.$)
+
         /*  determine common URL path prefix  */
         this._.prefix = commonPathPrefix([
             this.$.path.login,
