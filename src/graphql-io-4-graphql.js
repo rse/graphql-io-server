@@ -56,17 +56,8 @@ export default class GraphQLService {
         await this._.sub.open()
 
         /*  start with a mininum GraphQL schema and resolver  */
-        let schema = `
-            schema {
-                query:    Root
-                mutation: Root
-            }
-            type Root {
-            }
-        `
-        let resolver = {
-            Root: {}
-        }
+        let schema = ""
+        let resolver = { Root: {} }
 
         /*  let application extend GraphQL schema and resolver  */
         let apiSchema   = this.hook("graphql-schema",   "concat")
@@ -76,6 +67,22 @@ export default class GraphQLService {
         apiSchema.forEach((api) => {
             schema += textframe(api)
         })
+
+        /*  complete schema  */
+        if (!schema.match(/\btype\s+Root\s*\{/)) {
+            schema = textframe(`
+                type Root {
+                }
+            `) + schema
+        }
+        if (!schema.match(/\bschema\s*\{/)) {
+            schema = textframe(`
+                schema {
+                    query:    Root
+                    mutation: Root
+                }
+            `) + schema
+        }
 
         /*  extend resolver (and optionally schema)  */
         const mixinSchema = (type, value) => {
