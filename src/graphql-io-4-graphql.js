@@ -134,7 +134,7 @@ export default class GraphQLService {
             #   Information about GraphQL-IO Server
             type Server {
                 #   name of GraphQL-IO Server
-                name:    String
+                name: String
 
                 #   version of GraphQL-IO Server
                 version: String
