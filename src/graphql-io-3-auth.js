@@ -125,6 +125,12 @@ export default class Auth {
                 if (sessionId === null)
                     sessionId = (new UUID(1)).format()
 
+                /*  log request  */
+                let peer = request.peer()
+                let cid = `${peer.addr}:${peer.port}`
+                this.debug(1, `Auth: login: peer=${cid}, username=${username}, ` +
+                    `peerId=${peerId}, accountId=${accountId}, sessionId=${sessionId}`)
+
                 /*  issue new token  */
                 let jwt = this._.jwtSign({
                     peerId:    peerId,
@@ -154,6 +160,11 @@ export default class Auth {
                 auth: { mode: "try", strategy: "jwt" }
             },
             handler: async (request, reply) => {
+                /*  log request  */
+                let peer = request.peer()
+                let cid = `${peer.addr}:${peer.port}`
+                this.debug(1, `Auth: session: peer=${cid}`)
+
                 /*  fetch credentials  */
                 let ctx = {
                     error:     null,
@@ -188,6 +199,11 @@ export default class Auth {
                 auth: false
             },
             handler: async (request, reply) => {
+                /*  log request  */
+                let peer = request.peer()
+                let cid = `${peer.addr}:${peer.port}`
+                this.debug(1, `Auth: logout: peer=${cid}`)
+
                 /*  destroy session  */
                 if (   request.auth.isAuthenticated
                     && typeof request.auth.credentials === "object"

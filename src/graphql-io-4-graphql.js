@@ -310,11 +310,11 @@ export default class GraphQLService {
                             let peer = this._.server.peer(req)
                             let cid = `${peer.addr}:${peer.port}`
                             let proto = `WebSocket/${ws.protocolVersion}+HTTP/${req.httpVersion}`
-                            this.debug(1, `connect: peer=${cid}, method=${endpointMethod}, ` +
+                            this.debug(1, `GraphQL: connect: peer=${cid}, method=${endpointMethod}, ` +
                                 `url=${endpointURL}, protocol=${proto}`)
                             ctx.conn = this._.sub.connection(cid, (sids) => {
                                 /*  send notification message about outdated subscriptions  */
-                                this.debug(2, `sending GraphQL notification for SID(s): ${sids.join(", ")}`)
+                                this.debug(2, `GraphQL: sending notification for SID(s): ${sids.join(", ")}`)
                                 try { wsf.send({ type: "GRAPHQL-NOTIFY", data: sids }) }
                                 catch (ex) { void (ex) }
                             })
@@ -329,7 +329,7 @@ export default class GraphQLService {
                             let proto = `WebSocket/${ws.protocolVersion}+HTTP/${req.httpVersion}`
                             await this.hook("client-disconnect", "promise", { ctx, ws, req, peer })
                             this._.bus.publish("client-connections", -1)
-                            this.debug(1, `disconnect: peer=${cid}, method=${endpointMethod}, ` +
+                            this.debug(1, `GraphQL: disconnect: peer=${cid}, method=${endpointMethod}, ` +
                                 `url=${endpointURL}, protocol=${proto}`)
                             ctx.conn.destroy()
                         }
@@ -367,6 +367,10 @@ export default class GraphQLService {
                 if (typeof operation === "object" && operation !== null)
                     return reply(Boom.badRequest("invalid request"))
 
+                /*  determine client id  */
+                let peer = request.peer()
+                let cid = `${peer.addr}:${peer.port}`
+
                 /*  determine session information  */
                 let { peerId, accountId, sessionId } = request.auth.credentials
 
@@ -389,18 +393,24 @@ export default class GraphQLService {
                     let ctx = { tx, scope, peerId, accountId, sessionId }
 
                     /*  execute the GraphQL query against the GraphQL schema  */
+                    let info = `peer=${cid}, query=${JSON.stringify(query)}`
+                    if (variables) info += `, variables=${JSON.stringify(variables)}`
+                    if (operation) info += `, operation=${JSON.stringify(operation)}`
+                    this.debug(2, `GraphQL: request: ${info}`)
                     await this.hook("graphql-query", "promise", { schema: schemaExec, query, variables, operation, ctx })
                     return GraphQL.graphql(schemaExec, query, null, ctx, variables, operation)
                 }).then(async (result) => {
                     /*  success/commit  */
                     if (scope)
                         scope.commit()
+                    this.debug(2, `GraphQL: response (success): peer=${cid}, result=${JSON.stringify(result)}`)
                     await this.hook("graphql-result", "promise", { schema: schemaExec, query, variables, operation, result })
                     reply(result).code(200)
                 }).catch(async (result) => {
                     /*  error/rollback  */
                     if (scope)
                         scope.reject()
+                    this.debug(2, `GraphQL: response (error): peer=${cid}, result=${JSON.stringify(result)}`)
                     await this.hook("graphql-result", "promise", { schema: schemaExec, query, variables, operation, result })
                     reply(result)
                 })
