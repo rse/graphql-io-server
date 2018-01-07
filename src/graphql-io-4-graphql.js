@@ -343,7 +343,7 @@ export default class GraphQLService {
                                 `url=${endpointURL}, protocol=${proto}`)
                             ctx.conn = this._.sub.connection(cid, (sids) => {
                                 /*  send notification message about outdated subscriptions  */
-                                this.debug(2, `GraphQL: sending notification for SID(s): ${sids.join(", ")}`)
+                                this.debug(2, `GraphQL: notification: peer=${cid} sids=${sids.join(",")}`)
                                 try { wsf.send({ type: "GRAPHQL-NOTIFY", data: sids }) }
                                 catch (ex) { void (ex) }
                             })
