@@ -166,21 +166,28 @@ export default class GraphQLService {
             requests: [ 0, 0, 0, 0, 0 ],
             clients:  0
         }
+        const serverInfo = {
+            root:     { type: "_Server",          oid: 0 },
+            load:     { type: "_Server_load",     oid: 1 },
+            requests: { type: "_Server_requests", oid: 2 },
+            clients:  { type: "_Server_clients",  oid: 3 }
+        }
         this._.kvs.put("server", server)
         mixinResolver("Root", "_Server", (obj, args, ctx, info) => {
+            ctx.scope.record(serverInfo.root.type, serverInfo.root.oid, "read", "direct", "one")
             return this._.kvs.get("server")
         })
-        mixinResolver("_Server", "clients", (obj, args, ctx, info) => {
-            ctx.scope.record("_Server_clients", 0, "read", "direct", "one")
-            return obj.clients
+        mixinResolver("_Server", "load", (obj, args, ctx, info) => {
+            ctx.scope.record(serverInfo.load.type, serverInfo.load.oid, "read", "direct", "one")
+            return obj.load
         })
         mixinResolver("_Server", "requests", (obj, args, ctx, info) => {
-            ctx.scope.record("_Server_requests", 0, "read", "direct", "one")
+            ctx.scope.record(serverInfo.requests.type, serverInfo.requests.oid, "read", "direct", "one")
             return obj.requests
         })
-        mixinResolver("_Server", "load", (obj, args, ctx, info) => {
-            ctx.scope.record("_Server_load", 0, "read", "direct", "one")
-            return obj.load
+        mixinResolver("_Server", "clients", (obj, args, ctx, info) => {
+            ctx.scope.record(serverInfo.clients.type, serverInfo.clients.oid, "read", "direct", "one")
+            return obj.clients
         })
 
         /*  perform system load and application load accounting  */
@@ -244,9 +251,9 @@ export default class GraphQLService {
 
                 /*  notify about change  */
                 if (changedLoad)
-                    this._.sub.scopeRecord("_Server_load", 0, "update", "direct", "one")
+                    this._.sub.scopeRecord(serverInfo.load.type, serverInfo.load.oid, "update", "direct", "one")
                 if (changedRequests)
-                    this._.sub.scopeRecord("_Server_requests", 0, "update", "direct", "one")
+                    this._.sub.scopeRecord(serverInfo.requests.type, serverInfo.requests.oid, "update", "direct", "one")
             }, accountingInterval)
         }
 
@@ -282,7 +289,7 @@ export default class GraphQLService {
 
                     /*  notify about change  */
                     if (changedClients)
-                        this._.sub.scopeRecord("_Server_clients", 0, "update", "direct", "one")
+                        this._.sub.scopeRecord(serverInfo.clients.type, serverInfo.clients.oid, "update", "direct", "one")
                 }, 1 * 1000)
             }
         })
