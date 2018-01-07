@@ -168,7 +168,6 @@ export default class GraphQLService {
         }
         this._.kvs.put("server", server)
         mixinResolver("Root", "_Server", (obj, args, ctx, info) => {
-            ctx.scope.record("_Server", 0, "read", "direct", "one")
             return this._.kvs.get("server")
         })
         mixinResolver("_Server", "clients", (obj, args, ctx, info) => {
