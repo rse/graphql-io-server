@@ -171,6 +171,18 @@ export default class GraphQLService {
             ctx.scope.record("_Server", 0, "read", "direct", "one")
             return this._.kvs.get("server")
         })
+        mixinResolver("_Server", "clients", (obj, args, ctx, info) => {
+            ctx.scope.record("_Server:clients", 0, "read", "direct", "one")
+            return obj.clients
+        })
+        mixinResolver("_Server", "requests", (obj, args, ctx, info) => {
+            ctx.scope.record("_Server:requests", 0, "read", "direct", "one")
+            return obj.requests
+        })
+        mixinResolver("_Server", "load", (obj, args, ctx, info) => {
+            ctx.scope.record("_Server:load", 0, "read", "direct", "one")
+            return obj.load
+        })
 
         /*  perform system load and application load accounting  */
         this._.sysload = new SysLoad({
@@ -193,17 +205,18 @@ export default class GraphQLService {
                 /*  load server instance  */
                 await this._.kvs.acquire()
                 let server = await this._.kvs.get("server")
-                let changed = false
 
                 /*  determine system load  */
                 let load = this._.sysload.average()
-                if (server.load[0] !== load.load10s) { server.load[0] = load.load10s; changed = true }
-                if (server.load[1] !== load.load1m ) { server.load[1] = load.load1m;  changed = true }
-                if (server.load[2] !== load.load10m) { server.load[2] = load.load10m; changed = true }
-                if (server.load[3] !== load.load1h)  { server.load[3] = load.load1h;  changed = true }
-                if (server.load[4] !== load.load10h) { server.load[4] = load.load10h; changed = true }
+                let changedLoad = false
+                if (server.load[0] !== load.load10s) { server.load[0] = load.load10s; changedLoad = true }
+                if (server.load[1] !== load.load1m ) { server.load[1] = load.load1m;  changedLoad = true }
+                if (server.load[2] !== load.load10m) { server.load[2] = load.load10m; changedLoad = true }
+                if (server.load[3] !== load.load1h)  { server.load[3] = load.load1h;  changedLoad = true }
+                if (server.load[4] !== load.load10h) { server.load[4] = load.load10h; changedLoad = true }
 
                 /*  determine application load  */
+                let changedRequests = false
                 const account = (idx, duration, req) => {
                     if (requests[idx] === undefined)
                         requests[idx] = []
@@ -215,7 +228,7 @@ export default class GraphQLService {
                     load = Math.trunc(load * 10) / 10
                     if (server.requests[idx] !== load) {
                         server.requests[idx] = load
-                        changed = true
+                        changedRequests = true
                     }
                 }
                 account(0,           10 * 1000, requestsWithinUnit)
@@ -226,13 +239,15 @@ export default class GraphQLService {
                 requestsWithinUnit = 0
 
                 /*  save server instance  */
-                if (changed)
+                if (changedLoad || changedRequests)
                     await this._.kvs.put("server", server)
                 await this._.kvs.release()
 
                 /*  notify about change  */
-                if (changed)
-                    this._.sub.scopeRecord("_Server", 0, "update", "direct", "one")
+                if (changedLoad)
+                    this._.sub.scopeRecord("_Server:load", 0, "update", "direct", "one")
+                if (changedRequests)
+                    this._.sub.scopeRecord("_Server:requests", 0, "update", "direct", "one")
             }, accountingInterval)
         }
 
@@ -255,20 +270,20 @@ export default class GraphQLService {
                     let server = await this._.kvs.get("server")
 
                     /*  update server instance  */
-                    let changed = false
+                    let changedClients = false
                     if (server.clients !== clients) {
                         server.clients = clients
-                        changed = true
+                        changedClients = true
                     }
 
                     /*  save server instance  */
-                    if (changed)
+                    if (changedClients)
                         await this._.kvs.put("server", server)
                     await this._.kvs.release()
 
                     /*  notify about change  */
-                    if (changed)
-                        this._.sub.scopeRecord("_Server", 0, "update", "direct", "one")
+                    if (changedClients)
+                        this._.sub.scopeRecord("_Server:clients", 0, "update", "direct", "one")
                 }, 1 * 1000)
             }
         })
