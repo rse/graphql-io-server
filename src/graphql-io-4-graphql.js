@@ -171,15 +171,15 @@ export default class GraphQLService {
             return this._.kvs.get("server")
         })
         mixinResolver("_Server", "clients", (obj, args, ctx, info) => {
-            ctx.scope.record("_Server:clients", 0, "read", "direct", "one")
+            ctx.scope.record("_Server_clients", 0, "read", "direct", "one")
             return obj.clients
         })
         mixinResolver("_Server", "requests", (obj, args, ctx, info) => {
-            ctx.scope.record("_Server:requests", 0, "read", "direct", "one")
+            ctx.scope.record("_Server_requests", 0, "read", "direct", "one")
             return obj.requests
         })
         mixinResolver("_Server", "load", (obj, args, ctx, info) => {
-            ctx.scope.record("_Server:load", 0, "read", "direct", "one")
+            ctx.scope.record("_Server_load", 0, "read", "direct", "one")
             return obj.load
         })
 
@@ -244,9 +244,9 @@ export default class GraphQLService {
 
                 /*  notify about change  */
                 if (changedLoad)
-                    this._.sub.scopeRecord("_Server:load", 0, "update", "direct", "one")
+                    this._.sub.scopeRecord("_Server_load", 0, "update", "direct", "one")
                 if (changedRequests)
-                    this._.sub.scopeRecord("_Server:requests", 0, "update", "direct", "one")
+                    this._.sub.scopeRecord("_Server_requests", 0, "update", "direct", "one")
             }, accountingInterval)
         }
 
@@ -282,7 +282,7 @@ export default class GraphQLService {
 
                     /*  notify about change  */
                     if (changedClients)
-                        this._.sub.scopeRecord("_Server:clients", 0, "update", "direct", "one")
+                        this._.sub.scopeRecord("_Server_clients", 0, "update", "direct", "one")
                 }, 1 * 1000)
             }
         })
