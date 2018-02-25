@@ -414,7 +414,7 @@ export default class GraphQLService {
                 let { peerId, accountId, sessionId } = request.auth.credentials
 
                 /*  create a scope for tracing GraphQL operations over WebSockets  */
-                let scope = ws.mode === "websocket" ? ws.ctx.conn.scope(query) : null
+                let scope = ws.mode === "websocket" ? ws.ctx.conn.scope(query, variables) : null
 
                 /*  allow application to wrap execution into a (database) transaction  */
                 let transaction = this.hook("graphql-transaction", "none")
