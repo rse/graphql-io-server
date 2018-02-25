@@ -53,6 +53,9 @@ export default class GraphQLService {
             pubsub: this.$.pubsub.match(/^mpm:/) ? this.$.pubsub + ":subscribe" : this.$.pubsub,
             keyval: this.$.keyval.match(/^mpm:/) ? this.$.keyval + ":subscribe" : this.$.keyval
         })
+        this._.sub.on("debug", (log) => {
+            this.debug(2, `GraphQL Subscribe: ${log}`)
+        })
         await this._.sub.open()
 
         /*  start with a mininum GraphQL schema and resolver  */
