@@ -417,7 +417,7 @@ export default class GraphQLService {
                 let scope = ws.mode === "websocket" ? ws.ctx.conn.scope(query, variables) : null
 
                 /*  allow application to wrap execution into a (database) transaction  */
-                let transaction = this.hook("graphql-transaction", "none")
+                let transaction = this.hook("graphql-transaction", "pass")
                 if (!transaction) {
                     transaction = (cb) => {
                         return new Promise((resolve, reject) => {
