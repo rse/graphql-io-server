@@ -416,8 +416,12 @@ export default class GraphQLService {
                 /*  create a scope for tracing GraphQL operations over WebSockets  */
                 let scope = ws.mode === "websocket" ? ws.ctx.conn.scope(query, variables) : null
 
+                /*  create context for GraphQL resolver functions  */
+                let ctx = { tx: null, scope, peerId, accountId, sessionId }
+
                 /*  allow application to wrap execution into a (database) transaction  */
-                let transaction = this.hook("graphql-transaction", "pass")
+                let transaction = this.hook("graphql-transaction", "pass",
+                    { schema: schemaExec, query, variables, operation, ctx })
                 if (!transaction) {
                     transaction = (cb) => {
                         return new Promise((resolve, reject) => {
@@ -428,10 +432,8 @@ export default class GraphQLService {
 
                 /*  execute GraphQL operation within a transaction  */
                 return transaction(async (tx) => {
-                    /*  create context for GraphQL resolver functions  */
-                    let ctx = { tx, scope, peerId, accountId, sessionId }
-
                     /*  execute the GraphQL query against the GraphQL schema  */
+                    ctx.tx = tx
                     let info = `peer=${cid}, query=${JSON.stringify(query)}`
                     if (variables) info += `, variables=${JSON.stringify(variables)}`
                     if (operation) info += `, operation=${JSON.stringify(operation)}`
