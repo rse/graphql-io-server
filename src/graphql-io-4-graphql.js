@@ -422,7 +422,7 @@ export default class GraphQLService {
                 /*  allow application to wrap execution into a (database) transaction  */
                 let transaction = this.hook("graphql-transaction", "pass",
                     { schema: schemaExec, query, variables, operation, ctx })
-                if (!transaction) {
+                if (typeof transaction !== "function") {
                     transaction = (cb) => {
                         return new Promise((resolve, reject) => {
                             resolve(cb(null))
