@@ -110,26 +110,65 @@ declare module "graphql-io-server" {
         public on(eventName: string, handler: (eventData: any) => void): () => void
 
         /*  Latch into a hook **hookName** and let the callback **handler** be synchronously
-            called for every hook processing. Known hooks are:
-            `server-configure` (processing type: "promise", handler argument: `server: GraphQLIOServer`),
-            `jwt-validate` (processing type: "pass", handler argument: `ctx: { error: null, result: true }, decoded: Object, request: Object`),
-            `server-start` (processing type: "promise", handler argument: `server: HAPIServer`),
-            `server-stop` (processing type: "promise", handler argument: `server: HAPIServer`),
-            `peer-recognize` (processing type: "promise", handler argument: `ctx: { error: null, peerId: String }`),
-            `account-authenticate` (processing type: "promise", handler argument: `ctx: { error: null, accountId: String, username: null, password: null }`),
-            `session-create` (processing type: "promise", handler argument: `ctx: { error: null, sessionId: null, accountId: String, peerId: String, ttl: Number }`),
-            `session-details` (processing type: "promise", handler argument: `ctx: { error: null, peerId: null|String, accounId: null|String, sessionId: null|String }`),
-            `session-destroy` (processing type: "promise", handler argument: `ctx: { error: null, sessionId: String }`),
-            `graphql-schema` (processing type: "concat", handler argument: none),
-            `graphql-resolver` (processing type: "concat", handler argument: `resolver: {}`),
-            `client-connect` (processing type: "promise", handler argument: `ctx: { ctx: Object, ws: Object, wsf: Object, req: Object, peer: String }`),
-            `client-disconnect` (processing type: "promise", handler argument: `ctx: { ctx: Object, ws: Object, req: Object, peer: String }`),
-            `client-request` (processing type: "promise", handler argument: `ctx: { request: Object, ws: Object }`),
-            `graphql-transaction` (processing type: "pass", handler argument: `ctx: { schema: Object, query: String, variables: Object, operation: String, ctx: Object }`),
-            `graphql-query` (processing type: "promise", handler argument: `ctx: { schema: Object, query: String, variables: Object, operation: String, ctx: Object }`),
-            `graphql-result` (processing type: "promise", handler argument: `ctx: { schema: Object, query: String, variables: Object, operation: String, result: Object }`),
-            `blob` (processing type: "promise", handler argument: `ctx: { error: null, path: String, filename: null, type: null, content: null, request: Object, peerId: String: accountId: String, sessionId: String }`).
-            Returns a function to remove the handler again. */
+            called for every hook processing. Returns a function to remove the handler again.
+            Known hooks are:
+            - `server-configure`
+              (processing type: "promise", handler argument:
+              `server: GraphQLIOServer`)
+            - `jwt-validate`
+              (processing type: "pass", handler argument:
+              `ctx: { error: null, result: true }, decoded: Object, request: Object`)
+            - `server-start`
+              (processing type: "promise", handler argument:
+              `server: HAPIServer`)
+            - `server-stop`
+              (processing type: "promise", handler argument:
+              `server: HAPIServer`)
+            - `peer-recognize`
+              (processing type: "promise", handler argument:
+              `ctx: { error: null, peerId: String }`)
+            - `account-authenticate`
+              (processing type: "promise", handler argument:
+              `ctx: { error: null, accountId: String, username: null, password: null }`)
+            - `session-create`
+              (processing type: "promise", handler argument:
+              `ctx: { error: null, sessionId: null, accountId: String, peerId: String, ttl: Number }`)
+            - `session-details`
+              (processing type: "promise", handler argument:
+              `ctx: { error: null, peerId: null|String, accounId: null|String, sessionId: null|String }`)
+            - `session-destroy`
+              (processing type: "promise", handler argument:
+              `ctx: { error: null, sessionId: String }`)
+            - `graphql-schema`
+              (processing type: "concat", handler argument: none)
+            - `graphql-resolver`
+              (processing type: "concat", handler argument:
+              `resolver: {}`)
+            - `client-connect`
+              (processing type: "promise", handler argument:
+              `ctx: { ctx: Object, ws: Object, wsf: Object, req: Object, peer: String }`)
+            - `client-disconnect`
+              (processing type: "promise", handler argument:
+              `ctx: { ctx: Object, ws: Object, req: Object, peer: String }`)
+            - `client-request`
+              (processing type: "promise", handler argument:
+              `ctx: { request: Object, ws: Object }`)
+            - `graphql-transaction`
+              (processing type: "pass", handler argument:
+              `ctx: { schema: Object, query: String, variables: Object,
+              operation: String, ctx: Object }`)
+            - `graphql-query`
+              (processing type: "promise", handler argument:
+              `ctx: { schema: Object, query: String, variables: Object,
+              operation: String, ctx: Object }`)
+            - `graphql-result`
+              (processing type: "promise", handler argument:
+              `ctx: { schema: Object, query: String, variables: Object,
+              operation: String, result: Object }`)
+            - `blob`
+              (processing type: "promise", handler argument:
+              `ctx: { error: null, path: String, filename: null, type: null, content: null,
+              request: Object, peerId: String, accountId: String, sessionId: String }`)  */
         public at(hookName: string, handler: (...args: any[]) => any): () => void
 
         /*  Merge one or more options into the Server configuration.
