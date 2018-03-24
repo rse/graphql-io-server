@@ -38,7 +38,7 @@ declare module "graphql-io-server" {
             path: {
                 /*  The relative URL path to the optional static frontend.
                     Has to match the regex `^\\/.*$`.
-                    The default is `/api/auth/login`.  */
+                    The default is `/`.  */
                 frontend: string,
 
                 /*  The relative URL path to the optional GraphiQL frontend.
