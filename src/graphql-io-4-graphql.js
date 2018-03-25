@@ -331,7 +331,7 @@ export default class GraphQLService {
         this._.server.route({
             method: endpointMethod,
             path:   endpointURL,
-            config: {
+            options: {
                 auth:    { mode: "try", strategy: "jwt" },
                 payload: { output: "data", parse: true, allow: "application/json" },
                 plugins: {
@@ -380,14 +380,14 @@ export default class GraphQLService {
                     }`
                 }
             },
-            handler: async (request, reply) => {
+            handler: async (request, h) => {
                 /*  determine optional WebSocket information  */
                 let ws = request.websocket()
 
                 /*  short-circuit handler processing of initial WebSocket message
                     (instead we just want the authentication to be done by HAPI)  */
                 if (ws.initially)
-                    return reply().code(204)
+                    return h.response().code(204)
 
                 /*  load accounting  */
                 await this.hook("client-request", "promise", { request, ws })
@@ -395,7 +395,7 @@ export default class GraphQLService {
 
                 /*  determine request  */
                 if (typeof request.payload !== "object" || request.payload === null)
-                    return reply(Boom.badRequest("invalid request"))
+                    return Boom.badRequest("invalid request")
                 let query     = request.payload.query
                 let variables = request.payload.variables
                 let operation = request.payload.operationName
@@ -404,7 +404,7 @@ export default class GraphQLService {
                 if (typeof variables === "string")
                     variables = JSON.parse(variables)
                 if (typeof operation === "object" && operation !== null)
-                    return reply(Boom.badRequest("invalid request"))
+                    return Boom.badRequest("invalid request")
 
                 /*  determine client id  */
                 let peer = request.peer()
@@ -446,14 +446,14 @@ export default class GraphQLService {
                         scope.commit()
                     this.debug(2, `GraphQL: response (success): peer=${cid}, result=${JSON.stringify(result)}`)
                     await this.hook("graphql-result", "promise", { schema: schemaExec, query, variables, operation, result })
-                    reply(result).code(200)
+                    return h.response(result).code(200)
                 }).catch(async (result) => {
                     /*  error/rollback  */
                     if (scope)
                         scope.reject()
                     this.debug(2, `GraphQL: response (error): peer=${cid}, result=${JSON.stringify(result)}`)
                     await this.hook("graphql-result", "promise", { schema: schemaExec, query, variables, operation, result })
-                    reply(result)
+                    return h.response(result).code(200)
                 })
             }
         })

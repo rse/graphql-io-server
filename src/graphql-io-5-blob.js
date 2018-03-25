@@ -33,10 +33,10 @@ export default class BLOB {
             this._.server.route({
                 method: "GET",
                 path: `${this.$.path.blob}/{path*}`,
-                config: {
+                options: {
                     auth: { mode: "try", strategy: "jwt" }
                 },
-                handler: async (request, reply) => {
+                handler: async (request, h) => {
                     let { peerId, accountId, sessionId } = request.auth.credentials
                     let ctx = {
                         error:    null,
@@ -51,10 +51,10 @@ export default class BLOB {
                     }
                     await this.hook("blob", "promise", ctx)
                     if (ctx.error !== null)
-                        return reply.unauthorized(`failed to determine BLOB information: ${ctx.error}`)
+                        return Boom.unauthorized(`failed to determine BLOB information: ${ctx.error}`)
                     if (ctx.path !== null) {
                         /*  stream content from filesystem  */
-                        let response = reply.file(ctx.path, {
+                        let response = h.file(ctx.path, {
                             confine:  false,
                             filename: ctx.filename !== null ? ctx.filename : ctx.path,
                             mode:     "attachment"
@@ -66,7 +66,7 @@ export default class BLOB {
                     }
                     else if (ctx.content !== null) {
                         /*  send content from memory  */
-                        let response = reply(ctx.content)
+                        let response = h.response(ctx.content)
                         response.code(200)
                         response.type(ctx.type !== null ? ctx.type : "application/octet-stream")
                         if (ctx.filename)
@@ -75,7 +75,7 @@ export default class BLOB {
                         return response
                     }
                     else
-                        reply(Boom.internal("neither path nor content given by application"))
+                        return Boom.internal("neither path nor content given by application")
                 }
             })
         }

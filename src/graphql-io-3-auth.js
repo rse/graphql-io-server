@@ -23,27 +23,28 @@
 */
 
 /*  external requirements  */
+import Boom from "boom"
 import UUID from "pure-uuid"
 
 /*  Authentication functionality  */
 export default class Auth {
     static async start () {
         /*  provide (implicit) (auto-)login mechanism  */
-        this._.server.ext("onPostAuth", async (request, reply) => {
+        this._.server.ext("onPostAuth", async (request, h) => {
             if (request.auth.mode === "try" && !request.auth.isAuthenticated) {
                 /*  recognize peer by id  */
                 let { id: peerId } = request.peer()
                 let ctx = { error: null, peerId }
                 await this.hook("peer-recognize", "promise", ctx)
                 if (ctx.error !== null)
-                    return reply.unauthorized(`failed to handle peer: ${ctx.error}`)
+                    return Boom.unauthorized(`failed to handle peer: ${ctx.error}`)
                 peerId = ctx.peerId
 
                 /*  authenticate account via username/password  */
                 ctx = { error: null, accountId: null, username: null, password: null }
                 await this.hook("account-authenticate", "promise", ctx)
                 if (ctx.error !== null)
-                    return reply.unauthorized(`failed to authenticate username/password: ${ctx.error}`)
+                    return Boom.unauthorized(`failed to authenticate username/password: ${ctx.error}`)
                 let accountId = ctx.accountId
                 if (accountId === null)
                     accountId = "anonymous"
@@ -52,7 +53,7 @@ export default class Auth {
                 ctx = { error: null, sessionId: null, accountId, peerId, ttl: this.$.ttl }
                 await this.hook("session-create", "promise", ctx)
                 if (ctx.error !== null)
-                    return reply.unauthorized(`failed to create new session: ${ctx.error}`)
+                    return Boom.unauthorized(`failed to create new session: ${ctx.error}`)
                 let sessionId = ctx.sessionId
                 if (sessionId === null)
                     sessionId = (new UUID(1)).format()
@@ -65,7 +66,7 @@ export default class Auth {
                 }, "365d")
 
                 /*  provide token as a cookie  */
-                reply.state(`${this.$.prefix}Token`, jwt, {
+                h.state(`${this.$.prefix}Token`, jwt, {
                     ttl:          this.$.ttl,
                     path:         this._.prefix,
                     encoding:     "none",
@@ -81,21 +82,21 @@ export default class Auth {
                 request.auth.credentials     = { peerId, accountId, sessionId }
                 request.auth.error           = null
             }
-            reply.continue()
+            return h.continue
         })
 
         /*  provide (explicit) login endpoint  */
         this._.server.route({
             method: "POST",
             path:   this.$.path.login,
-            config: {
+            options: {
                 auth:     false,
                 payload:  { output: "data", parse: true, allow: "application/json" },
                 plugins: {
                     ducky: "{ username?: string, password?: string }"
                 }
             },
-            handler: async (request, reply) => {
+            handler: async (request, h) => {
                 /*  fetch payload  */
                 let { username, password } = request.payload
 
@@ -104,14 +105,14 @@ export default class Auth {
                 let ctx = { error: null, peerId }
                 await this.hook("peer-recognize", "promise", ctx)
                 if (ctx.error !== null)
-                    return reply.unauthorized(`failed to handle peer: ${ctx.error}`)
+                    return Boom.unauthorized(`failed to handle peer: ${ctx.error}`)
                 peerId = ctx.peerId
 
                 /*  authenticate account via username/password  */
                 ctx = { error: null, accountId: null, username, password }
                 await this.hook("account-authenticate", "promise", ctx)
                 if (ctx.error !== null)
-                    return reply.unauthorized(`failed to authenticate username/password: ${ctx.error}`)
+                    return Boom.unauthorized(`failed to authenticate username/password: ${ctx.error}`)
                 let accountId = ctx.accountId
                 if (accountId === null)
                     accountId = "anonymous"
@@ -120,7 +121,7 @@ export default class Auth {
                 ctx = { error: null, sessionId: null, accountId, peerId, ttl: this.$.ttl }
                 await this.hook("session-create", "promise", ctx)
                 if (ctx.error !== null)
-                    return reply.unauthorized(`failed to create new session: ${ctx.error}`)
+                    return Boom.unauthorized(`failed to create new session: ${ctx.error}`)
                 let sessionId = ctx.sessionId
                 if (sessionId === null)
                     sessionId = (new UUID(1)).format()
@@ -140,7 +141,9 @@ export default class Auth {
 
                 /*  send token and peer information in payload and cookie  */
                 let payload = { token: jwt, peer: peerId }
-                reply(payload).code(201).state(`${this.$.prefix}Token`, jwt, {
+                let response = h.response(payload)
+                response.code(201)
+                response.state(`${this.$.prefix}Token`, jwt, {
                     ttl:          this.$.ttl,
                     path:         this._.prefix,
                     encoding:     "none",
@@ -149,6 +152,7 @@ export default class Auth {
                     clearInvalid: false,
                     strictHeader: true
                 })
+                return response
             }
         })
 
@@ -156,10 +160,10 @@ export default class Auth {
         this._.server.route({
             method: "GET",
             path:   this.$.path.session,
-            config: {
+            options: {
                 auth: { mode: "try", strategy: "jwt" }
             },
-            handler: async (request, reply) => {
+            handler: async (request, h) => {
                 /*  log request  */
                 let peer = request.peer()
                 let cid = `${peer.addr}:${peer.port}`
@@ -179,15 +183,17 @@ export default class Auth {
                 }
                 await this.hook("session-details", "promise", ctx)
                 if (ctx.error !== null)
-                    return reply.unauthorized(`failed to determine session: ${ctx.error}`)
+                    return Boom.unauthorized(`failed to determine session: ${ctx.error}`)
                 let { peerId, accountId, sessionId } = ctx
 
                 /*  pass-through information  */
-                reply({
+                let response = h.response({
                     peerId:    peerId,
                     accountId: accountId,
                     sessionId: sessionId
-                }).code(200)
+                })
+                response.code(200)
+                return response
             }
         })
 
@@ -195,10 +201,10 @@ export default class Auth {
         this._.server.route({
             method: "GET",
             path:   this.$.path.logout,
-            config: {
+            options: {
                 auth: false
             },
-            handler: async (request, reply) => {
+            handler: async (request, h) => {
                 /*  log request  */
                 let peer = request.peer()
                 let cid = `${peer.addr}:${peer.port}`
@@ -212,11 +218,13 @@ export default class Auth {
                     let ctx = { error: null, sessionId }
                     await this.hook("session-destroy", "promise", ctx)
                     if (ctx.error !== null)
-                        return reply.unauthorized(`failed to logout: ${ctx.error}`)
+                        return Boom.unauthorized(`failed to logout: ${ctx.error}`)
                 }
 
                 /*  destroy cookie  */
-                reply().code(204).state(`${this.$.prefix}Token`, "", {
+                let response = h.response()
+                response.code(204)
+                response.state(`${this.$.prefix}Token`, "", {
                     ttl:          0,
                     path:         this._.prefix,
                     encoding:     "none",
@@ -225,6 +233,7 @@ export default class Auth {
                     clearInvalid: false,
                     strictHeader: true
                 })
+                return response
             }
         })
     }

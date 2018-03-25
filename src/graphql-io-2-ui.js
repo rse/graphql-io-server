@@ -35,8 +35,8 @@ export default class UI {
                 this._.server.route({
                     method: "GET",
                     path:   "/",
-                    handler: (request, reply) => {
-                        reply.redirect(this.$.path.frontend)
+                    handler: async (request, h) => {
+                        return h.redirect(this.$.path.frontend)
                     }
                 })
             }
@@ -61,8 +61,8 @@ export default class UI {
         /*  optional static delivery of generic GraphiQL UI
             (works at same path as GraphQL as it is GET based)  */
         if (this.$.graphiql) {
-            this._.server.register({
-                register: HAPIGraphiQL,
+            await this._.server.register({
+                plugin: HAPIGraphiQL,
                 options: {
                     graphiqlURL:     this.$.path.graphiql,
                     graphqlFetchURL: this.$.path.graph,
