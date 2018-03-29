@@ -17,7 +17,7 @@
     "homepage": "https://github.com/rse/graphql-io-server",
     "bugs":     "https://github.com/rse/graphql-io-server/issues",
     "dependencies": {
-        "stdapi":                         "0.9.7",
+        "stdapi":                         "1.0.0",
         "graphql":                        "0.13.2",
         "graphql-tools":                  "2.23.1",
         "graphql-tools-sequelize":        "1.5.0",
@@ -40,15 +40,15 @@
         "jsonwebtoken":                   "8.2.0",
         "generate-password":              "1.4.0",
         "common-path-prefix":             "1.0.0",
-        "ipc-pubsub":                     "0.9.14",
-        "ipc-keyval":                     "0.9.19",
+        "ipc-pubsub":                     "1.0.0",
+        "ipc-keyval":                     "1.0.0",
         "co":                             "4.6.0",
         "boom":                           "7.2.0",
-        "textframe":                      "0.9.5",
-        "sysload":                        "0.9.2",
+        "textframe":                      "0.9.6",
+        "sysload":                        "0.9.4",
         "urijs":                          "1.19.1",
         "pure-uuid":                      "1.5.0",
-        "ducky":                          "2.6.4",
+        "ducky":                          "2.6.5",
         "mz":                             "2.7.0"
     },
     "devDependencies": {
@@ -61,7 +61,7 @@
         "babel-core":                     "6.26.0",
         "grunt-tslint":                   "5.0.1",
         "tslint":                         "5.9.1",
-        "typescript":                     "2.7.2",
+        "typescript":                     "2.8.1",
         "babel-preset-env":               "1.6.1",
         "babel-preset-stage-3":           "6.24.1",
         "babel-preset-stage-2":           "6.24.1",
@@ -75,7 +75,7 @@
         "eslint-plugin-node":             "6.0.1"
     },
     "engines": {
-        "node":                           ">=6.0.0"
+        "node":                           ">=8.0.0"
     },
     "scripts": {
         "prepublishOnly": "grunt default",
