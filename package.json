@@ -25,9 +25,9 @@
         "graphql-tools-types":            "1.1.15",
         "http2":                          "0.0.0",
         "hapi":                           "17.2.3",
-        "hapi-plugin-graphiql":           "2.0.1",
+        "hapi-plugin-graphiql":           "2.0.2",
         "hapi-plugin-peer":               "1.0.0",
-        "hapi-plugin-websocket":          "2.0.2",
+        "hapi-plugin-websocket":          "2.0.3",
         "hapi-auth-basic":                "5.0.0",
         "hapi-auth-jwt2":                 "8.0.1",
         "hapi-boom-decorators":           "4.0.0",
@@ -44,11 +44,11 @@
         "ipc-keyval":                     "1.0.0",
         "co":                             "4.6.0",
         "boom":                           "7.2.0",
-        "textframe":                      "0.9.6",
+        "textframe":                      "0.9.7",
         "sysload":                        "0.9.4",
         "urijs":                          "1.19.1",
-        "pure-uuid":                      "1.5.0",
-        "ducky":                          "2.6.5",
+        "pure-uuid":                      "1.5.1",
+        "ducky":                          "2.6.6",
         "mz":                             "2.7.0"
     },
     "devDependencies": {
@@ -71,7 +71,7 @@
         "eslint-config-standard":         "11.0.0",
         "eslint-plugin-standard":         "3.0.1",
         "eslint-plugin-promise":          "3.7.0",
-        "eslint-plugin-import":           "2.9.0",
+        "eslint-plugin-import":           "2.10.0",
         "eslint-plugin-node":             "6.0.1"
     },
     "engines": {
