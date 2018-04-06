@@ -37,7 +37,7 @@
         "hapi-plugin-traffic":            "1.0.0",
         "http2":                          "3.3.7",
         "inert":                          "5.1.0",
-        "jsonwebtoken":                   "8.2.0",
+        "jsonwebtoken":                   "8.2.1",
         "generate-password":              "1.4.0",
         "common-path-prefix":             "1.0.0",
         "ipc-pubsub":                     "1.0.0",
