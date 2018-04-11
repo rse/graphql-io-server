@@ -366,7 +366,8 @@ export default class GraphQLService {
                         disconnect: async ({ ctx, ws, req }) => {
                             let peer = this._.server.peer(req)
                             let cid = `${peer.addr}:${peer.port}`
-                            let proto = `WebSocket/${ws.protocolVersion}+HTTP/${req.httpVersion}`
+                            let wsVersion = ws.protocolVersion || req.headers["sec-websocket-version"] || "13?"
+                            let proto = `WebSocket/${wsVersion}+HTTP/${req.httpVersion}`
                             await this.hook("client-disconnect", "promise", { ctx, ws, req, peer })
                             this._.bus.publish("client-connections", -1)
                             this.debug(1, `GraphQL: disconnect: peer=${cid}, method=${endpointMethod}, ` +
