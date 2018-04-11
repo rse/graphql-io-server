@@ -348,7 +348,8 @@ export default class GraphQLService {
                         connect: async ({ ctx, ws, wsf, req }) => {
                             let peer = this._.server.peer(req)
                             let cid = `${peer.addr}:${peer.port}`
-                            let proto = `WebSocket/${ws.protocolVersion}+HTTP/${req.httpVersion}`
+                            let wsVersion = ws.protocolVersion || req.headers["sec-websocket-version"] || "13?"
+                            let proto = `WebSocket/${wsVersion}+HTTP/${req.httpVersion}`
                             this.debug(1, `GraphQL: connect: peer=${cid}, method=${endpointMethod}, ` +
                                 `url=${endpointURL}, protocol=${proto}`)
                             ctx.conn = this._.sub.connection(cid, (sids) => {
