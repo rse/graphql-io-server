@@ -200,10 +200,12 @@ export default class Server extends StdAPI {
         /*  log all requests  */
         server.events.on("response", (request) => {
             let traffic = request.traffic()
+            let protocol = `HTTP/${request.raw.req.httpVersion}`
             let ws = request.websocket()
-            let protocol =
-                (ws.mode === "websocket" ? `WebSocket/${ws.ws.protocolVersion}+` : "") +
-                `HTTP/${request.raw.req.httpVersion}`
+            if (ws.mode === "websocket") {
+                let wsVersion = ws.ws.protocolVersion || request.headers["sec-websocket-version"] || "13?"
+                protocol = `WebSocket/${wsVersion}+${protocol}`
+            }
             let msg =
                 "request: " +
                 "remote="   + `${request.app.clientAddress}:${request.info.remotePort}` + ", " +
