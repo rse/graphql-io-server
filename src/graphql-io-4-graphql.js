@@ -337,6 +337,7 @@ export default class GraphQLService {
                 plugins: {
                     websocket: {
                         only:          false,
+                        initially:     false,
 
                         /*  use framed communication  */
                         frame:         true,
