@@ -177,19 +177,23 @@ export default class GraphQLService {
         }
         this._.kvs.put("server", server)
         mixinResolver("Root", "_Server", (obj, args, ctx, info) => {
-            ctx.scope.record(serverInfo.root.type, serverInfo.root.oid, "read", "direct", "one")
+            if (ctx.scope !== null)
+                ctx.scope.record(serverInfo.root.type, serverInfo.root.oid, "read", "direct", "one")
             return this._.kvs.get("server")
         })
         mixinResolver("_Server", "load", (obj, args, ctx, info) => {
-            ctx.scope.record(serverInfo.load.type, serverInfo.load.oid, "read", "direct", "one")
+            if (ctx.scope !== null)
+                ctx.scope.record(serverInfo.load.type, serverInfo.load.oid, "read", "direct", "one")
             return obj.load
         })
         mixinResolver("_Server", "requests", (obj, args, ctx, info) => {
-            ctx.scope.record(serverInfo.requests.type, serverInfo.requests.oid, "read", "direct", "one")
+            if (ctx.scope !== null)
+                ctx.scope.record(serverInfo.requests.type, serverInfo.requests.oid, "read", "direct", "one")
             return obj.requests
         })
         mixinResolver("_Server", "clients", (obj, args, ctx, info) => {
-            ctx.scope.record(serverInfo.clients.type, serverInfo.clients.oid, "read", "direct", "one")
+            if (ctx.scope !== null)
+                ctx.scope.record(serverInfo.clients.type, serverInfo.clients.oid, "read", "direct", "one")
             return obj.clients
         })
 
