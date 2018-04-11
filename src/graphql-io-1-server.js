@@ -80,8 +80,9 @@ export default class Server extends StdAPI {
             debug:        [ "number", 0 ],
             example:      [ "string",
                 "query Example {\n" +
-                "    session {\n" +
-                "        peerId accountId sessionId\n" +
+                "    _Server {\n" +
+                "        name\n" +
+                "        version\n" +
                 "    }\n" +
                 "}\n"
             ]
