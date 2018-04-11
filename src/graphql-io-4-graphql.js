@@ -375,11 +375,11 @@ export default class GraphQLService {
                             ctx.conn.destroy()
                         }
                     },
-                    ducky: `{
+                    ducky: `(null | {
                         query: string,
                         variables?: (object|string),
                         operationName?: (object|string)
-                    }`
+                    })`
                 }
             },
             handler: async (request, h) => {
