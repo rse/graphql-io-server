@@ -468,7 +468,7 @@ export default class GraphQLService {
                         scope.reject()
                     let duration = timerDuration()
                     if (typeof result === "object" && result instanceof Error)
-                        result = result.message
+                        result = `${result.name}: ${result.message}`
                     else if (typeof result !== "string")
                         result = result.toString()
                     result = { errors: [ { message: result } ] }
