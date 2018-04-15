@@ -471,7 +471,7 @@ export default class GraphQLService {
                         result = result.message
                     else if (typeof result !== "string")
                         result = result.toString()
-                    result = { error: result }
+                    result = { errors: [ { message: result } ] }
                     this.debug(2, `GraphQL: response (error): peer=${cid}, result=${JSON.stringify(result)}, duration=${duration}ms`)
                     await this.hook("graphql-result", "promise", { schema: schemaExec, query, variables, operation, result, duration })
                     return h.response(result).code(200)
