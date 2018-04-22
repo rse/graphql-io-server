@@ -227,7 +227,7 @@ export default class Server extends StdAPI {
         })
         server.events.on("log", (event, tags) => {
             if (tags.error) {
-                let err = event.data
+                let err = event.error
                 if (err instanceof Error)
                     this.debug(2, `HAPI: log: ${err.message}`)
                 else
