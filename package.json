@@ -17,7 +17,7 @@
     "homepage": "https://github.com/rse/graphql-io-server",
     "bugs":     "https://github.com/rse/graphql-io-server/issues",
     "dependencies": {
-        "stdapi":                         "1.0.1",
+        "stdapi":                         "1.0.2",
         "graphql":                        "0.13.2",
         "graphql-tools":                  "2.24.0",
         "graphql-tools-sequelize":        "1.5.2",
@@ -43,7 +43,7 @@
         "ipc-keyval":                     "1.0.3",
         "co":                             "4.6.0",
         "boom":                           "7.2.0",
-        "textframe":                      "0.9.7",
+        "textframe":                      "0.9.8",
         "sysload":                        "0.9.5",
         "urijs":                          "1.19.1",
         "pure-uuid":                      "1.5.2",
@@ -68,7 +68,7 @@
         "babel-eslint":                   "8.2.3",
         "eslint":                         "4.19.1",
         "eslint-config-standard":         "11.0.0",
-        "eslint-plugin-standard":         "3.0.1",
+        "eslint-plugin-standard":         "3.1.0",
         "eslint-plugin-promise":          "3.7.0",
         "eslint-plugin-import":           "2.11.0",
         "eslint-plugin-node":             "6.0.1"
