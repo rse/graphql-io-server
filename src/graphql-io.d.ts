@@ -142,8 +142,13 @@ declare module "graphql-io-server" {
             - `graphql-schema`
               (processing type: "concat", handler argument: none)
             - `graphql-resolver`
-              (processing type: "concat", handler argument:
-              `resolver: {}`)
+              (processing type: "concat", handler argument: `resolver: Object`)
+            - `graphql-postproc-schema`
+              (processing type: "pass", handler argument: `schema: String`)
+            - `graphql-postproc-resolver`
+              (processing type: "pass", handler argument: `resolver: Object`)
+            - `graphql-postproc-schema-exec`
+              (processing type: "pass", handler argument: `schema: Object`)
             - `client-connect`
               (processing type: "promise", handler argument:
               `ctx: { ctx: Object, ws: Object, wsf: Object, req: Object, peer: String }`)
@@ -161,6 +166,10 @@ declare module "graphql-io-server" {
               (processing type: "promise", handler argument:
               `ctx: { schema: Object, query: String, variables: Object,
               operation: String, ctx: Object }`)
+            - `graphql-response-success`
+              (processing type: "pass", handler argument: `result: Object`)
+            - `graphql-response-error`
+              (processing type: "pass", handler argument: `result: Object`)
             - `graphql-result`
               (processing type: "promise", handler argument:
               `ctx: { schema: Object, query: String, variables: Object,

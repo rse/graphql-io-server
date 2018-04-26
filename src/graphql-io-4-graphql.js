@@ -316,6 +316,10 @@ export default class GraphQLService {
         mixinResolver("_Subscription", "pause",         this._.sub.resolverPause())
         mixinResolver("_Subscription", "resume",        this._.sub.resolverResume())
 
+        /*  allow applications to post-process the GraphQL schema and resolver  */
+        schema   = this.hook("graphql-postproc-schema",   "pass", schema)
+        resolver = this.hook("graphql-postproc-resolver", "pass", resolver)
+
         /*  generate GraphQL schema  */
         let schemaExec = GraphQLTools.makeExecutableSchema({
             typeDefs:  [ schema ],
@@ -325,9 +329,13 @@ export default class GraphQLService {
             resolverValidationOptions: {
                 requireResolversForArgs:      true,
                 requireResolversForNonScalar: true,
-                requireResolversForAllFields: false
+                requireResolversForAllFields: false,
+                allowResolversNotInSchema:    false
             }
         })
+
+        /*  allow applications to post-process the executable GraphQL schema  */
+        schemaExec = this.hook("graphql-postproc-schema-exec", "pass", schemaExec)
 
         /*  establish the HAPI route for GraphQL  */
         let endpointMethod = "POST"
@@ -456,6 +464,7 @@ export default class GraphQLService {
                     return GraphQL.graphql(schemaExec, query, null, ctx, variables, operation)
                 }).then(async (result) => {
                     /*  success/commit  */
+                    result = await this.hook("graphql-response-success", "pass", result)
                     if (scope)
                         scope.commit()
                     let duration = timerDuration()
@@ -464,6 +473,7 @@ export default class GraphQLService {
                     return h.response(result).code(200)
                 }).catch(async (result) => {
                     /*  error/rollback  */
+                    result = await this.hook("graphql-response-error", "pass", result)
                     if (scope)
                         scope.reject()
                     let duration = timerDuration()
