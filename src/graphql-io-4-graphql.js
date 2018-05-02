@@ -33,9 +33,14 @@ import PubSub            from "ipc-pubsub"
 import KeyVal            from "ipc-keyval"
 import SysLoad           from "sysload"
 import cluster           from "cluster"
+import ObjectHash        from "node-object-hash"
+import UUID              from "pure-uuid"
 
 /*  internal requirements  */
 import pkg               from "../package.json"
+
+/*  create a global instance of the object hasher  */
+const ObjectHasher = ObjectHash()
 
 /*  the GraphQL functionality  */
 export default class GraphQLService {
@@ -337,6 +342,9 @@ export default class GraphQLService {
         /*  allow applications to post-process the executable GraphQL schema  */
         schemaExec = this.hook("graphql-postproc-schema-exec", "pass", schemaExec)
 
+        /*  generate namespace UUID  */
+        const nsUUID = new UUID(5, "ns:URL", "http://engelschall.com/ns/graphql-query")
+
         /*  establish the HAPI route for GraphQL  */
         let endpointMethod = "POST"
         let endpointURL    = this.$.path.graph
@@ -428,6 +436,10 @@ export default class GraphQLService {
                 /*  determine session information  */
                 let { peerId, accountId, sessionId } = request.auth.credentials
 
+                /*  determine unique query id  */
+                const data = ObjectHasher.sort({ query, variables })
+                let qid = (new UUID(5, nsUUID, data)).format()
+
                 /*  create a scope for tracing GraphQL operations over WebSockets  */
                 let scope = ws.mode === "websocket" ? ws.ctx.conn.scope(query, variables) : null
 
@@ -456,7 +468,7 @@ export default class GraphQLService {
                 return transaction(async (tx) => {
                     /*  execute the GraphQL query against the GraphQL schema  */
                     ctx.tx = tx
-                    let info = `peer=${cid}, query=${JSON.stringify(query)}`
+                    let info = `peer=${cid}, qid=${qid}, query=${JSON.stringify(query)}`
                     if (variables) info += `, variables=${JSON.stringify(variables)}`
                     if (operation) info += `, operation=${JSON.stringify(operation)}`
                     this.debug(2, `GraphQL: request: ${info}`)
@@ -468,7 +480,7 @@ export default class GraphQLService {
                     if (scope)
                         scope.commit()
                     let duration = timerDuration()
-                    this.debug(2, `GraphQL: response (success): peer=${cid}, result=${JSON.stringify(result)}, duration=${duration}ms`)
+                    this.debug(2, `GraphQL: response (success): peer=${cid}, qid=${qid}, result=${JSON.stringify(result)}, duration=${duration}ms`)
                     await this.hook("graphql-result", "promise", { schema: schemaExec, query, variables, operation, result, duration })
                     return h.response(result).code(200)
                 }).catch(async (result) => {
@@ -482,7 +494,7 @@ export default class GraphQLService {
                     else if (typeof result !== "string")
                         result = result.toString()
                     result = { errors: [ { message: result } ] }
-                    this.debug(2, `GraphQL: response (error): peer=${cid}, result=${JSON.stringify(result)}, duration=${duration}ms`)
+                    this.debug(2, `GraphQL: response (error): peer=${cid}, qid=${qid}, result=${JSON.stringify(result)}, duration=${duration}ms`)
                     await this.hook("graphql-result", "promise", { schema: schemaExec, query, variables, operation, result, duration })
                     return h.response(result).code(200)
                 })
