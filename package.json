@@ -44,6 +44,8 @@
         "ipc-keyval":                     "1.0.3",
         "co":                             "4.6.0",
         "boom":                           "7.2.0",
+        "oset":                           "2.0.7",
+        "chunking":                       "0.9.3",
         "textframe":                      "0.9.9",
         "sysload":                        "0.9.6",
         "urijs":                          "1.19.1",

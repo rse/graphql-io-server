@@ -35,6 +35,8 @@ import SysLoad           from "sysload"
 import cluster           from "cluster"
 import ObjectHash        from "node-object-hash"
 import UUID              from "pure-uuid"
+import { OSet }          from "oset"
+import Chunking          from "chunking"
 
 /*  internal requirements  */
 import pkg               from "../package.json"
@@ -373,11 +375,25 @@ export default class GraphQLService {
                             let proto = `WebSocket/${wsVersion}+HTTP/${req.httpVersion}`
                             this.debug(1, `GraphQL: connect: peer=${cid}, method=${endpointMethod}, ` +
                                 `url=${endpointURL}, protocol=${proto}`)
+                            let notifyPeer = new Chunking({
+                                reset: (ctx) => {
+                                    ctx.sids = new OSet()
+                                },
+                                absorb: (ctx, args) => {
+                                    let sids = args[0]
+                                    sids.forEach((sid) => ctx.sids.add(sid))
+                                },
+                                emit: (ctx) => {
+                                    /*  send notification message about outdated subscriptions  */
+                                    let sids = ctx.sids.values()
+                                    this.debug(2, `GraphQL: notification: peer=${cid}, sids=${sids.join(",")}`)
+                                    try { wsf.send({ type: "GRAPHQL-NOTIFY", data: sids }) }
+                                    catch (ex) { void (ex) }
+                                },
+                                delay: this.$.throttle
+                            })
                             ctx.conn = this._.sub.connection(cid, (sids) => {
-                                /*  send notification message about outdated subscriptions  */
-                                this.debug(2, `GraphQL: notification: peer=${cid}, sids=${sids.join(",")}`)
-                                try { wsf.send({ type: "GRAPHQL-NOTIFY", data: sids }) }
-                                catch (ex) { void (ex) }
+                                notifyPeer(sids)
                             })
                             await this.hook("client-connect", "promise", { ctx, ws, wsf, req, peer })
                             this._.bus.publish("client-connections", +1)
