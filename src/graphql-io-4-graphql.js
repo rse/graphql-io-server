@@ -379,8 +379,7 @@ export default class GraphQLService {
                                 reset: (ctx) => {
                                     ctx.sids = new OSet()
                                 },
-                                absorb: (ctx, args) => {
-                                    let sids = args[0]
+                                absorb: (ctx, sids) => {
                                     sids.forEach((sid) => ctx.sids.add(sid))
                                 },
                                 emit: (ctx) => {
