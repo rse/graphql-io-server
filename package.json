@@ -45,7 +45,7 @@
         "co":                             "4.6.0",
         "boom":                           "7.2.0",
         "oset":                           "2.0.7",
-        "chunking":                       "0.9.4",
+        "chunking":                       "0.9.5",
         "textframe":                      "0.9.9",
         "sysload":                        "0.9.6",
         "urijs":                          "1.19.1",
