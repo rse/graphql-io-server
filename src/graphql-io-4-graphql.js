@@ -265,9 +265,9 @@ export default class GraphQLService {
 
                 /*  notify about change  */
                 if (changedLoad)
-                    this._.sub.scopeRecord(serverInfo.load.type, serverInfo.load.oid, "update", "direct", "one")
+                    this._.sub.record(serverInfo.load.type, serverInfo.load.oid, "update", "direct", "one")
                 if (changedRequests)
-                    this._.sub.scopeRecord(serverInfo.requests.type, serverInfo.requests.oid, "update", "direct", "one")
+                    this._.sub.record(serverInfo.requests.type, serverInfo.requests.oid, "update", "direct", "one")
             }, accountingInterval)
         }
 
@@ -303,7 +303,7 @@ export default class GraphQLService {
 
                     /*  notify about change  */
                     if (changedClients)
-                        this._.sub.scopeRecord(serverInfo.clients.type, serverInfo.clients.oid, "update", "direct", "one")
+                        this._.sub.record(serverInfo.clients.type, serverInfo.clients.oid, "update", "direct", "one")
                 }, 1 * 1000)
             }
         })
