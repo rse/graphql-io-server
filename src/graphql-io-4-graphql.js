@@ -48,17 +48,17 @@ const ObjectHasher = ObjectHash()
 export default class GraphQLService {
     static async start () {
         /*  setup IPC communication bus  */
-        this._.bus = new PubSub(this.$.pubsub + ":bus")
+        this._.bus = new PubSub(this.$.pubsub.match(/^(?:mpm|rpm)/) ? this.$.pubsub + ":bus" : this.$.pubsub)
         await this._.bus.open()
 
         /*  setup IPC key-value store  */
-        this._.kvs = new KeyVal(this.$.keyval + ":kvs")
+        this._.kvs = new KeyVal(this.$.keyval.match(/^(?:mpm|rpm)/) ? this.$.keyval + ":kvs" : this.$.keyval)
         await this._.kvs.open()
 
         /*  bootstrap GraphQL subscription framework  */
         this._.sub = new GraphQLSubscribe({
-            pubsub: this.$.pubsub + ":sub",
-            keyval: this.$.keyval + ":sub"
+            pubsub: this.$.pubsub.match(/^(?:mpm|rpm)/) ? this.$.pubsub + ":sub" : this.$.pubsub,
+            keyval: this.$.keyval.match(/^(?:mpm|rpm)/) ? this.$.keyval + ":sub" : this.$.keyval
         })
         this._.sub.on("debug", (log) => {
             this.debug(2, `GraphQL Subscribe: ${log}`)
