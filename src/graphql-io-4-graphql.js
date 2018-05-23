@@ -385,7 +385,7 @@ export default class GraphQLService {
                                 emit: (ctx) => {
                                     /*  send notification message about outdated subscriptions  */
                                     let sids = ctx.sids.values()
-                                    this.debug(2, `GraphQL: notification: peer=${cid}, sids=${sids.join(",")}`)
+                                    this.debug(1, `GraphQL: notification: peer=${cid}, sids=${sids.join(",")}`)
                                     try { wsf.send({ type: "GRAPHQL-NOTIFY", data: sids }) }
                                     catch (ex) { void (ex) }
                                 },
@@ -490,7 +490,7 @@ export default class GraphQLService {
                     let info = `peer=${cid}, qid=${qid}, query=${JSON.stringify(query)}`
                     if (variables) info += `, variables=${JSON.stringify(variables)}`
                     if (operation) info += `, operation=${JSON.stringify(operation)}`
-                    this.debug(2, `GraphQL: request: ${info}`)
+                    this.debug(1, `GraphQL: request: ${info}`)
 
                     /*  allow hooks to change GraphQL query information  */
                     await this.hook("graphql-query", "promise",
@@ -510,7 +510,7 @@ export default class GraphQLService {
 
                     /*  log response information  */
                     let duration = timerDuration()
-                    this.debug(2, `GraphQL: response (success): peer=${cid}, qid=${qid}, ` +
+                    this.debug(1, `GraphQL: response (success): peer=${cid}, qid=${qid}, ` +
                         `result=${JSON.stringify(result)}, duration=${duration}ms`)
 
                     /*  allow hooks to change final GraphQL result  */
@@ -538,7 +538,7 @@ export default class GraphQLService {
 
                     /*  log response information  */
                     let duration = timerDuration()
-                    this.debug(2, `GraphQL: response (error): peer=${cid}, qid=${qid}, ` +
+                    this.debug(1, `GraphQL: response (error): peer=${cid}, qid=${qid}, ` +
                         `result=${JSON.stringify(result)}, duration=${duration}ms`)
 
                     /*  allow hooks to change final GraphQL result  */

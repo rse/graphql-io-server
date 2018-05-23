@@ -239,7 +239,7 @@ export default class Server extends StdAPI {
         /*  display network interaction information  */
         const displayListenHint = ([ scheme, proto ]) => {
             let url = `${scheme}://${this._.url.hostname}:${this._.url.port}`
-            this.debug(2, `listen on ${url} (${proto})`)
+            this.debug(1, `HAPI: listen on ${url} (${proto})`)
         }
         displayListenHint(withTLS ? [ "https", "HTTP/{1.0,1.1,2.0} + SSL/TLS" ] : [ "http",  "HTTP/{1.0,1.1}" ])
         displayListenHint(withTLS ? [ "wss",   "WebSockets + SSL/TLS" ]         : [ "ws",    "WebSockets" ])
@@ -256,10 +256,10 @@ export default class Server extends StdAPI {
         /*  start the HAPI service  */
         return new Promise((resolve, reject) => {
             server.start().then(() => {
-                this.debug(2, "OK: started HAPI service")
+                this.debug(1, "HAPI: OK: started HAPI service")
                 resolve()
             }).catch((err) => {
-                this.debug(2, "ERROR: failed to start HAPI service")
+                this.debug(1, "HAPI: ERROR: failed to start HAPI service")
                 reject(err)
             })
         })
@@ -268,7 +268,7 @@ export default class Server extends StdAPI {
     /*  stop the service  */
     async stop () {
         /*   stop the HAPI service  */
-        this.debug(2, "gracefully stopping HAPI service")
+        this.debug(1, "HAPI: gracefully stopping HAPI service")
         await this._.server.stop({ timeout: 4 * 1000 })
 
         /*  allow application to hook into  */
