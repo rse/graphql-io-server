@@ -482,35 +482,71 @@ export default class GraphQLService {
                 /*  execute GraphQL operation within a transaction  */
                 return transaction(async (tx) => {
                     /*  execute the GraphQL query against the GraphQL schema  */
+
+                    /*  provide transaction context  */
                     ctx.tx = tx
+
+                    /*  log request information  */
                     let info = `peer=${cid}, qid=${qid}, query=${JSON.stringify(query)}`
                     if (variables) info += `, variables=${JSON.stringify(variables)}`
                     if (operation) info += `, operation=${JSON.stringify(operation)}`
                     this.debug(2, `GraphQL: request: ${info}`)
-                    await this.hook("graphql-query", "promise", { schema: schemaExec, query, variables, operation, ctx })
+
+                    /*  allow hooks to change GraphQL query information  */
+                    await this.hook("graphql-query", "promise",
+                        { schema: schemaExec, query, variables, operation, ctx })
+
+                    /*  execute GraphQL query  */
                     return GraphQL.graphql(schemaExec, query, null, ctx, variables, operation)
                 }).then(async (result) => {
                     /*  success/commit  */
+
+                    /*  allow hooks to change bare GraphQL response information  */
                     result = await this.hook("graphql-response-success", "pass", result)
+
+                    /*  commit the scope of GraphQL operations  */
                     if (scope)
                         scope.commit()
+
+                    /*  log response information  */
                     let duration = timerDuration()
-                    this.debug(2, `GraphQL: response (success): peer=${cid}, qid=${qid}, result=${JSON.stringify(result)}, duration=${duration}ms`)
-                    await this.hook("graphql-result", "promise", { schema: schemaExec, query, variables, operation, result, duration })
+                    this.debug(2, `GraphQL: response (success): peer=${cid}, qid=${qid}, ` +
+                        `result=${JSON.stringify(result)}, duration=${duration}ms`)
+
+                    /*  allow hooks to change final GraphQL result  */
+                    await this.hook("graphql-result", "promise",
+                        { schema: schemaExec, query, variables, operation, result, duration })
+
+                    /*  send result as a transport success message  */
                     return h.response(result).code(200)
                 }).catch(async (result) => {
                     /*  error/rollback  */
+
+                    /*  allow hooks to change GraphQL error information  */
                     result = await this.hook("graphql-response-error", "pass", result)
+
+                    /*  reject the scope of GraphQL operations  */
                     if (scope)
                         scope.reject()
-                    let duration = timerDuration()
+
+                    /*  convert any error information into valid GraphQL responses  */
                     if (typeof result === "object" && result instanceof Error)
                         result = `${result.name}: ${result.message}`
                     else if (typeof result !== "string")
                         result = result.toString()
                     result = { errors: [ { message: result } ] }
-                    this.debug(2, `GraphQL: response (error): peer=${cid}, qid=${qid}, result=${JSON.stringify(result)}, duration=${duration}ms`)
-                    await this.hook("graphql-result", "promise", { schema: schemaExec, query, variables, operation, result, duration })
+
+                    /*  log response information  */
+                    let duration = timerDuration()
+                    this.debug(2, `GraphQL: response (error): peer=${cid}, qid=${qid}, ` +
+                        `result=${JSON.stringify(result)}, duration=${duration}ms`)
+
+                    /*  allow hooks to change final GraphQL result  */
+                    await this.hook("graphql-result", "promise",
+                        { schema: schemaExec, query, variables, operation, result, duration })
+
+                    /*  send result as a transport success message
+                        (although it is actually an error on the GraphQL level)  */
                     return h.response(result).code(200)
                 })
             }
