@@ -64,6 +64,8 @@ export default class GraphQLService {
             this.debug(2, `GraphQL Subscribe: ${log}`)
         })
         await this._.sub.open()
+        if (cluster.isMaster)
+            await this._.sub.flush()
 
         /*  start with a mininum GraphQL schema and resolver  */
         let schema = ""
