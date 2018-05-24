@@ -165,8 +165,14 @@ export default class Server extends StdAPI {
             peerId: true,
             cookieName: `${this.$.prefix}Peer`,
             cookieOptions: {
-                path: this._.prefix,
-                isSameSite: "Strict"
+                ttl:          this.$.ttl,
+                path:         this._.prefix,
+                encoding:     "none",
+                isHttpOnly:   true,
+                isSecure:     false,
+                clearInvalid: false,
+                strictHeader: true,
+                isSameSite:   this.$.samesite !== "none" ? this.$.samesite : false
             }
         }})
 
