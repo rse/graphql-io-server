@@ -73,7 +73,8 @@ export default class Auth {
                     isHttpOnly:   true,
                     isSecure:     false,
                     clearInvalid: false,
-                    strictHeader: true
+                    strictHeader: true,
+                    isSameSite:   this.$.samesite !== "none" ? this.$.samesite : false
                 })
 
                 /*  provide implicit authentication information  */

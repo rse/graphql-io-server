@@ -72,6 +72,7 @@ export default class Server extends StdAPI {
             },
             secret:       [ "string", generatePassword.generate({ length: 16, numbers: true }) ],
             ttl:          [ "number", 7 * 24 * 60 * 60 * 1000 ],
+            samesite:     [ "/^(none|Strict|Lax)$/", "Strict" ],
             throttle:     [ "number", 50 ],
             pubsub:       [ "string", "spm" ],
             keyval:       [ "string", "spm" ],
