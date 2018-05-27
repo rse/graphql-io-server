@@ -377,7 +377,7 @@ export default class GraphQLService {
                             let proto = `WebSocket/${wsVersion}+HTTP/${req.httpVersion}`
                             this.debug(1, `GraphQL: connect: peer=${cid}, method=${endpointMethod}, ` +
                                 `url=${endpointURL}, protocol=${proto}`)
-                            let notifyPeer = new Chunking({
+                            let notifyPeer = Chunking({
                                 reset: (ctx) => {
                                     ctx.sids = new OSet()
                                 },
