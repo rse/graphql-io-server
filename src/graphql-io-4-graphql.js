@@ -27,6 +27,7 @@ import * as GraphQL      from "graphql"
 import * as GraphQLTools from "graphql-tools"
 import GraphQLTypes      from "graphql-tools-types"
 import GraphQLSubscribe  from "graphql-tools-subscribe"
+import graphqlFields     from "graphql-fields"
 import Boom              from "boom"
 import textframe         from "textframe"
 import PubSub            from "ipc-pubsub"
@@ -172,38 +173,25 @@ export default class GraphQLService {
             }
         `)
         let server = {
+            id:       "0",
             name:     pkg.name,
             version:  pkg.version,
             load:     [ 0, 0, 0, 0, 0 ],
             requests: [ 0, 0, 0, 0, 0 ],
             clients:  0
         }
-        const serverInfo = {
-            root:     { type: "_Server",          oid: 0 },
-            load:     { type: "_Server_load",     oid: 1 },
-            requests: { type: "_Server_requests", oid: 2 },
-            clients:  { type: "_Server_clients",  oid: 3 }
-        }
         this._.kvs.put("server", server)
         mixinResolver("Root", "_Server", (obj, args, ctx, info) => {
-            if (ctx.scope !== null)
-                ctx.scope.record(serverInfo.root.type, serverInfo.root.oid, "read", "direct", "one")
+            if (ctx.scope !== null) {
+                ctx.scope.record({
+                    op:       "read",
+                    arity:    "one",
+                    dstType:  "_Server",
+                    dstIds:   [ server.id ],
+                    dstAttrs: Object.keys(graphqlFields(info))
+                })
+            }
             return this._.kvs.get("server")
-        })
-        mixinResolver("_Server", "load", (obj, args, ctx, info) => {
-            if (ctx.scope !== null)
-                ctx.scope.record(serverInfo.load.type, serverInfo.load.oid, "read", "direct", "one")
-            return obj.load
-        })
-        mixinResolver("_Server", "requests", (obj, args, ctx, info) => {
-            if (ctx.scope !== null)
-                ctx.scope.record(serverInfo.requests.type, serverInfo.requests.oid, "read", "direct", "one")
-            return obj.requests
-        })
-        mixinResolver("_Server", "clients", (obj, args, ctx, info) => {
-            if (ctx.scope !== null)
-                ctx.scope.record(serverInfo.clients.type, serverInfo.clients.oid, "read", "direct", "one")
-            return obj.clients
         })
 
         /*  perform system load and application load accounting  */
@@ -266,10 +254,24 @@ export default class GraphQLService {
                 await this._.kvs.release()
 
                 /*  notify about change  */
-                if (changedLoad)
-                    this._.sub.record(serverInfo.load.type, serverInfo.load.oid, "update", "direct", "one")
-                if (changedRequests)
-                    this._.sub.record(serverInfo.requests.type, serverInfo.requests.oid, "update", "direct", "one")
+                if (changedLoad) {
+                    this._.sub.record({
+                        op:       "update",
+                        arity:    "one",
+                        dstType:  "_Server",
+                        dstIds:   [ server.id ],
+                        dstAttrs: [ "load" ]
+                    })
+                }
+                if (changedRequests) {
+                    this._.sub.record({
+                        op:       "update",
+                        arity:    "one",
+                        dstType:  "_Server",
+                        dstIds:   [ server.id ],
+                        dstAttrs: [ "requests" ]
+                    })
+                }
             }, accountingInterval)
         }
 
@@ -304,8 +306,15 @@ export default class GraphQLService {
                     await this._.kvs.release()
 
                     /*  notify about change  */
-                    if (changedClients)
-                        this._.sub.record(serverInfo.clients.type, serverInfo.clients.oid, "update", "direct", "one")
+                    if (changedClients) {
+                        this._.sub.record({
+                            op:       "update",
+                            arity:    "one",
+                            dstType:  "_Server",
+                            dstIds:   [ server.id ],
+                            dstAttrs: [ "clients" ]
+                        })
+                    }
                 }, 1 * 1000)
             }
         })
