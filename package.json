@@ -1,6 +1,6 @@
 {
     "name":        "graphql-io-server",
-    "version":     "1.4.2",
+    "version":     "1.4.3",
     "description": "GraphQL Network Communication Framework (Server)",
     "keywords":    [ "graphql", "network", "communication", "framework", "server" ],
     "main":        "./lib/graphql-io.js",
@@ -21,7 +21,7 @@
         "graphql":                        "0.13.2",
         "graphql-tools":                  "3.0.2",
         "graphql-tools-sequelize":        "2.0.2",
-        "graphql-tools-subscribe":        "2.0.3",
+        "graphql-tools-subscribe":        "2.0.4",
         "graphql-tools-types":            "1.1.22",
         "graphql-fields":                 "1.0.2",
         "hapi":                           "17.5.1",
