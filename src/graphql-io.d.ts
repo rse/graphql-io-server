@@ -25,7 +25,7 @@
 /*  The GraphQL-IO Server API consists of the primary class Server.  */
 declare module "graphql-io-server" {
     /*  The primary API class of GraphQL-IO Server,
-     *  representing the network communication server.  */
+        representing the network communication server.  */
     class Server {
         /*  Construct a new GraphQL-IO Server instance.  */
         public constructor(options?: {
