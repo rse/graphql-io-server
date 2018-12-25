@@ -157,7 +157,7 @@ export default class Server extends StdAPI {
         await server.register({ plugin: HAPIDucky })
         await server.register({ plugin: HAPIHeader, options: {
             Server: this.$.name
-        }})
+        } })
         await server.register({ plugin: HAPIWebSocket })
         await server.register({ plugin: HAPICo })
         await server.register({ plugin: HAPITraffic })
@@ -174,7 +174,7 @@ export default class Server extends StdAPI {
                 strictHeader: true,
                 isSameSite:   this.$.samesite !== "none" ? this.$.samesite : false
             }
-        }})
+        } })
 
         /*  provide client IP address  */
         server.ext("onRequest", async (request, h) => {
