@@ -221,7 +221,7 @@ export default class Server extends StdAPI {
                 "method="   + request.method.toUpperCase() + ", " +
                 "url="      + request.url.path + ", " +
                 "protocol=" + protocol + ", " +
-                "response=" + request.response.statusCode + ", " +
+                "response=" + (request.response ? request.response.statusCode : "<unknown>") + ", " +
                 "recv="     + traffic.recvPayload + "/" + traffic.recvRaw + ", " +
                 "sent="     + traffic.sentPayload + "/" + traffic.sentRaw + ", " +
                 "duration=" + traffic.timeDuration
