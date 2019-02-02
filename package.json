@@ -24,7 +24,7 @@
         "graphql-tools-types":             "1.2.1",
         "graphql-fields":                  "2.0.1",
         "hapi":                            "18.0.1",
-        "hapi-plugin-graphiql":            "2.1.0",
+        "hapi-plugin-graphiql":            "2.2.0",
         "hapi-plugin-peer":                "1.0.8",
         "hapi-plugin-websocket":           "2.0.16",
         "hapi-auth-basic":                 "5.0.0",
