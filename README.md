@@ -69,7 +69,7 @@ For more elaborate samples, check out the [Samples](https://github.com/rse/graph
 License
 -------
 
-Copyright (c) 2016-2019 Ralf S. Engelschall (http://engelschall.com/)
+Copyright (c) 2016-2019 Dr. Ralf S. Engelschall (http://engelschall.com/)
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the
