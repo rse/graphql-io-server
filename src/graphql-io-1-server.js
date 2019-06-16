@@ -26,13 +26,12 @@
 import fs                from "mz/fs"
 import StdAPI            from "stdapi"
 import UUID              from "pure-uuid"
-import HAPI              from "hapi"
 import http              from "http"
 import Http2             from "http2"
 import URI               from "urijs"
-import Inert             from "inert"
-import HAPIAuth          from "hapi-auth-basic"
-import HAPIBoom          from "hapi-boom-decorators"
+import HAPI              from "@hapi/hapi"
+import Inert             from "@hapi/inert"
+import HAPIAuth          from "@hapi/basic"
 import HAPIDucky         from "hapi-plugin-ducky"
 import HAPIHeader        from "hapi-plugin-header"
 import HAPIWebSocket     from "hapi-plugin-websocket"
@@ -153,7 +152,6 @@ export default class Server extends StdAPI {
         /*  register HAPI plugins  */
         await server.register({ plugin: Inert })
         await server.register({ plugin: HAPIAuth })
-        await server.register({ plugin: HAPIBoom })
         await server.register({ plugin: HAPIDucky })
         await server.register({ plugin: HAPIHeader, options: {
             Server: this.$.name
@@ -219,7 +217,7 @@ export default class Server extends StdAPI {
                 "request: " +
                 "remote="   + `${request.app.clientAddress}:${request.info.remotePort}` + ", " +
                 "method="   + request.method.toUpperCase() + ", " +
-                "url="      + request.url.path + ", " +
+                "url="      + request.url.pathname + ", " +
                 "protocol=" + protocol + ", " +
                 "response=" + (request.response ? request.response.statusCode : "<unknown>") + ", " +
                 "recv="     + traffic.recvPayload + "/" + traffic.recvRaw + ", " +

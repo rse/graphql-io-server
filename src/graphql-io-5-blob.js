@@ -23,7 +23,7 @@
 */
 
 /*  external requirements  */
-import Boom from "boom"
+import Boom from "@hapi/boom"
 
 /*  the Binary Large OBject (BLOB) delivery  */
 export default class BLOB {

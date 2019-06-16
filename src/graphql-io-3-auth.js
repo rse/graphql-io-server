@@ -23,7 +23,7 @@
 */
 
 /*  external requirements  */
-import Boom from "boom"
+import Boom from "@hapi/boom"
 import UUID from "pure-uuid"
 
 /*  Authentication functionality  */
