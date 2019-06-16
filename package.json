@@ -35,7 +35,6 @@
         "hapi-plugin-ducky":               "1.1.0",
         "hapi-plugin-header":              "1.1.0",
         "hapi-plugin-traffic":             "1.1.0",
-        "http2":                           "3.3.7",
         "jsonwebtoken":                    "8.5.1",
         "node-object-hash":                "1.4.2",
         "generate-password":               "1.4.1",
@@ -75,7 +74,7 @@
         "eslint-plugin-node":              "9.1.0"
     },
     "engines": {
-        "node":                            ">=8.0.0"
+        "node":                            ">=10.0.0"
     },
     "scripts": {
         "prepublishOnly": "grunt default",

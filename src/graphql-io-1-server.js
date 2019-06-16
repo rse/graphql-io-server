@@ -27,7 +27,7 @@ import fs                from "mz/fs"
 import StdAPI            from "stdapi"
 import UUID              from "pure-uuid"
 import http              from "http"
-import Http2             from "http2"
+import http2             from "http2"
 import URI               from "urijs"
 import HAPI              from "@hapi/hapi"
 import Inert             from "@hapi/inert"
@@ -126,7 +126,7 @@ export default class Server extends StdAPI {
         if (withTLS) {
             let crt = await fs.readFile(this.$.tls.crt, "utf8")
             let key = await fs.readFile(this.$.tls.key, "utf8")
-            listener = Http2.createServer({ key: key, cert: crt })
+            listener = http2.createSecureServer({ allowHTTP1: true, key: key, cert: crt })
         }
         else
             listener = http.createServer()
