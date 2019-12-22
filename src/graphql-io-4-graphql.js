@@ -73,8 +73,8 @@ export default class GraphQLService {
         let resolver = { Root: {} }
 
         /*  let application extend GraphQL schema and resolver  */
-        let apiSchema   = this.hook("graphql-schema",   "concat")
-        let apiResolver = this.hook("graphql-resolver", "concat", resolver)
+        const apiSchema   = this.hook("graphql-schema",   "concat")
+        const apiResolver = this.hook("graphql-resolver", "concat", resolver)
 
         /*  extend schema  */
         apiSchema.forEach((api) => {
@@ -102,8 +102,8 @@ export default class GraphQLService {
             if (type === "root")
                 schema += "\n" + textframe(value)
             else {
-                let re = new RegExp(`(type\\s+${type}\\s*(?:implements\\s+\\S+)?\\s*\\{(?:.|\\r?\\n)*?)(\\})`)
-                let m = schema.match(re)
+                const re = new RegExp(`(type\\s+${type}\\s*(?:implements\\s+\\S+)?\\s*\\{(?:.|\\r?\\n)*?)(\\})`)
+                const m = schema.match(re)
                 if (m === null)
                     throw new Error(`schema for ${type} not found`)
                 schema = schema.replace(re, `$1${textframe(value)}$2`)
@@ -129,7 +129,7 @@ export default class GraphQLService {
                     if (typeof api[type][attr] === "function")
                         mixinResolver(type, attr, api[type][attr])
                     else if (typeof api[type][attr] === "object" && api[type][attr] instanceof Array) {
-                        let [ d, r ] = api[type][attr]
+                        const [ d, r ] = api[type][attr]
                         mixinSchema(type, d)
                         mixinResolver(type, attr, r)
                     }
@@ -172,7 +172,7 @@ export default class GraphQLService {
                 load: [Float]!
             }
         `)
-        let server = {
+        const server = {
             id:       "0",
             name:     pkg.name,
             version:  pkg.version,
@@ -207,14 +207,14 @@ export default class GraphQLService {
         this._.bus.subscribe("client-requests", (num) => {
             requestsWithinUnit++
         })
-        let requests = []
-        let accountingInterval = 5 * 1000
+        const requests = []
+        const accountingInterval = 5 * 1000
         this._.timerLoad = null
         if (cluster.isMaster) {
             this._.timerLoad = setInterval(async () => {
                 /*  load server instance  */
                 await this._.kvs.acquire()
-                let server = await this._.kvs.get("server")
+                const server = await this._.kvs.get("server")
 
                 /*  determine system load  */
                 let load = this._.sysload.average()
@@ -291,7 +291,7 @@ export default class GraphQLService {
 
                     /*  load server instance  */
                     await this._.kvs.acquire()
-                    let server = await this._.kvs.get("server")
+                    const server = await this._.kvs.get("server")
 
                     /*  update server instance  */
                     let changedClients = false
@@ -359,8 +359,8 @@ export default class GraphQLService {
         const nsUUID = new UUID(5, "ns:URL", "http://engelschall.com/ns/graphql-query")
 
         /*  establish the HAPI route for GraphQL  */
-        let endpointMethod = "POST"
-        let endpointURL    = this.$.path.graph
+        const endpointMethod = "POST"
+        const endpointURL    = this.$.path.graph
         this._.server.route({
             method: endpointMethod,
             path:   endpointURL,
@@ -380,13 +380,13 @@ export default class GraphQLService {
 
                         /*  on WebSocket connection, establish subscription connection  */
                         connect: async ({ ctx, ws, wsf, req }) => {
-                            let peer = this._.server.peer(req)
-                            let cid = `${peer.addr}:${peer.port}`
-                            let wsVersion = ws.protocolVersion || req.headers["sec-websocket-version"] || "13?"
-                            let proto = `WebSocket/${wsVersion}+HTTP/${req.httpVersion}`
+                            const peer = this._.server.peer(req)
+                            const cid = `${peer.addr}:${peer.port}`
+                            const wsVersion = ws.protocolVersion || req.headers["sec-websocket-version"] || "13?"
+                            const proto = `WebSocket/${wsVersion}+HTTP/${req.httpVersion}`
                             this.debug(1, `GraphQL: connect: peer=${cid}, method=${endpointMethod}, ` +
                                 `url=${endpointURL}, protocol=${proto}`)
-                            let notifyPeer = Chunking({
+                            const notifyPeer = Chunking({
                                 reset: (ctx) => {
                                     ctx.sids = new OSet()
                                 },
@@ -395,7 +395,7 @@ export default class GraphQLService {
                                 },
                                 emit: (ctx) => {
                                     /*  send notification message about outdated subscriptions  */
-                                    let sids = ctx.sids.values()
+                                    const sids = ctx.sids.values()
                                     this.debug(1, `GraphQL: notification: peer=${cid}, sids=${sids.join(",")}`)
                                     try { wsf.send({ type: "GRAPHQL-NOTIFY", data: sids }) }
                                     catch (ex) { void (ex) }
@@ -411,10 +411,10 @@ export default class GraphQLService {
 
                         /*  on WebSocket disconnection, destroy subscription connection  */
                         disconnect: async ({ ctx, ws, req }) => {
-                            let peer = this._.server.peer(req)
-                            let cid = `${peer.addr}:${peer.port}`
-                            let wsVersion = ws.protocolVersion || req.headers["sec-websocket-version"] || "13?"
-                            let proto = `WebSocket/${wsVersion}+HTTP/${req.httpVersion}`
+                            const peer = this._.server.peer(req)
+                            const cid = `${peer.addr}:${peer.port}`
+                            const wsVersion = ws.protocolVersion || req.headers["sec-websocket-version"] || "13?"
+                            const proto = `WebSocket/${wsVersion}+HTTP/${req.httpVersion}`
                             await this.hook("client-disconnect", "promise", { ctx, ws, req, peer })
                             this._.bus.publish("client-connections", -1)
                             this.debug(1, `GraphQL: disconnect: peer=${cid}, method=${endpointMethod}, ` +
@@ -431,7 +431,7 @@ export default class GraphQLService {
             },
             handler: async (request, h) => {
                 /*  determine optional WebSocket information  */
-                let ws = request.websocket()
+                const ws = request.websocket()
 
                 /*  short-circuit handler processing of initial WebSocket message
                     (instead we just want the authentication to be done by HAPI)  */
@@ -445,9 +445,9 @@ export default class GraphQLService {
                 /*  determine request  */
                 if (typeof request.payload !== "object" || request.payload === null)
                     return Boom.badRequest("invalid request")
-                let query     = request.payload.query
+                const query     = request.payload.query
                 let variables = request.payload.variables
-                let operation = request.payload.operationName
+                const operation = request.payload.operationName
 
                 /*  support special case of GraphiQL  */
                 if (typeof variables === "string")
@@ -456,21 +456,21 @@ export default class GraphQLService {
                     return Boom.badRequest("invalid request")
 
                 /*  determine client id  */
-                let peer = request.peer()
-                let cid = `${peer.addr}:${peer.port}`
+                const peer = request.peer()
+                const cid = `${peer.addr}:${peer.port}`
 
                 /*  determine session information  */
-                let { peerId, accountId, sessionId } = request.auth.credentials
+                const { peerId, accountId, sessionId } = request.auth.credentials
 
                 /*  determine unique query id  */
                 const data = ObjectHasher.sort({ query, variables })
-                let qid = (new UUID(5, nsUUID, data)).format()
+                const qid = (new UUID(5, nsUUID, data)).format()
 
                 /*  create a scope for tracing GraphQL operations over WebSockets  */
-                let scope = ws.mode === "websocket" ? ws.ctx.conn.scope(query, variables) : null
+                const scope = ws.mode === "websocket" ? ws.ctx.conn.scope(query, variables) : null
 
                 /*  create context for GraphQL resolver functions  */
-                let ctx = { tx: null, scope, peerId, accountId, sessionId }
+                const ctx = { tx: null, scope, peerId, accountId, sessionId }
 
                 /*  allow application to wrap execution into a (database) transaction  */
                 let transaction = this.hook("graphql-transaction", "pass",
@@ -484,9 +484,9 @@ export default class GraphQLService {
                 }
 
                 /*  perform timing of request/response processing  */
-                let timerBegin = process.hrtime()
+                const timerBegin = process.hrtime()
                 const timerDuration = () => {
-                    let timerEnd = process.hrtime(timerBegin)
+                    const timerEnd = process.hrtime(timerBegin)
                     return (((timerEnd[0] * 1e6) + (timerEnd[1] / 1e3)) / 1e6).toFixed(3)
                 }
 
@@ -520,7 +520,7 @@ export default class GraphQLService {
                         scope.commit()
 
                     /*  log response information  */
-                    let duration = timerDuration()
+                    const duration = timerDuration()
                     this.debug(1, `GraphQL: response (success): peer=${cid}, qid=${qid}, ` +
                         `result=${JSON.stringify(result)}, duration=${duration}ms`)
 
@@ -548,7 +548,7 @@ export default class GraphQLService {
                     result = { errors: [ { message: result } ] }
 
                     /*  log response information  */
-                    let duration = timerDuration()
+                    const duration = timerDuration()
                     this.debug(1, `GraphQL: response (error): peer=${cid}, qid=${qid}, ` +
                         `result=${JSON.stringify(result)}, duration=${duration}ms`)
 

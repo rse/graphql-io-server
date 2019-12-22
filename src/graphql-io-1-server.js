@@ -117,15 +117,15 @@ export default class Server extends StdAPI {
             this._.url.port = this._.url.protocol === "https" ? 443 : 80
         if (typeof this._.url.port === "string")
             this._.url.port = parseInt(this._.url.port)
-        let withTLS = (this.$.tls.crt !== "" && this.$.tls.key !== "")
+        const withTLS = (this.$.tls.crt !== "" && this.$.tls.key !== "")
         if (!withTLS && this._.url.protocol === "https")
             throw new Error("HTTPS requires TLS Certificate/Key")
 
         /*  create underlying HTTP/HTTPS listener  */
         let listener
         if (withTLS) {
-            let crt = await fs.readFile(this.$.tls.crt, "utf8")
-            let key = await fs.readFile(this.$.tls.key, "utf8")
+            const crt = await fs.readFile(this.$.tls.crt, "utf8")
+            const key = await fs.readFile(this.$.tls.key, "utf8")
             listener = http2.createSecureServer({ allowHTTP1: true, key: key, cert: crt })
         }
         else
@@ -134,7 +134,7 @@ export default class Server extends StdAPI {
             listener.address = function () { return this._server.address() }
 
         /*  configure the listening socket  */
-        let hapiOpts = {
+        const hapiOpts = {
             listener:   listener,
             autoListen: false
         }
@@ -142,7 +142,7 @@ export default class Server extends StdAPI {
             hapiOpts.tls = true
 
         /*  establish a new server context  */
-        let server = new HAPI.Server(hapiOpts)
+        const server = new HAPI.Server(hapiOpts)
         this._.server = server
 
         /*  start listening  */
@@ -187,7 +187,7 @@ export default class Server extends StdAPI {
         })
 
         /*  prepare for JSONWebToken (JWT) authentication  */
-        let jwtKey = this.$.secret
+        const jwtKey = this.$.secret
         await server.register({ plugin: HAPIAuthJWT2 })
         server.auth.strategy("jwt", "jwt", {
             key:           jwtKey,
@@ -196,7 +196,7 @@ export default class Server extends StdAPI {
             cookieKey:     `${this.$.prefix}Token`,
             tokenType:     "JWT",
             validate: (decoded, request, h) => {
-                let result = this.hook("jwt-validate", "pass",
+                const result = this.hook("jwt-validate", "pass",
                     { error: null, result: true }, decoded, request)
                 return { isValid: result.result, error: result.error }
             }
@@ -206,14 +206,14 @@ export default class Server extends StdAPI {
 
         /*  log all requests  */
         server.events.on("response", (request) => {
-            let traffic = request.traffic()
+            const traffic = request.traffic()
             let protocol = `HTTP/${request.raw.req.httpVersion}`
-            let ws = request.websocket()
+            const ws = request.websocket()
             if (ws.mode === "websocket") {
-                let wsVersion = ws.ws.protocolVersion || request.headers["sec-websocket-version"] || "13?"
+                const wsVersion = ws.ws.protocolVersion || request.headers["sec-websocket-version"] || "13?"
                 protocol = `WebSocket/${wsVersion}+${protocol}`
             }
-            let msg =
+            const msg =
                 "request: " +
                 "remote="   + `${request.app.clientAddress}:${request.info.remotePort}` + ", " +
                 "method="   + request.method.toUpperCase() + ", " +
@@ -233,7 +233,7 @@ export default class Server extends StdAPI {
         })
         server.events.on("log", (event, tags) => {
             if (tags.error) {
-                let err = event.error
+                const err = event.error
                 if (err instanceof Error)
                     this.debug(2, `HAPI: log: ${err.message}`)
                 else
@@ -243,7 +243,7 @@ export default class Server extends StdAPI {
 
         /*  display network interaction information  */
         const displayListenHint = ([ scheme, proto ]) => {
-            let url = `${scheme}://${this._.url.hostname}:${this._.url.port}`
+            const url = `${scheme}://${this._.url.hostname}:${this._.url.port}`
             this.debug(1, `HAPI: listen on ${url} (${proto})`)
         }
         displayListenHint(withTLS ? [ "https", "HTTP/{1.0,1.1,2.0} + SSL/TLS" ] : [ "http",  "HTTP/{1.0,1.1}" ])

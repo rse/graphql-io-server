@@ -37,8 +37,8 @@ export default class BLOB {
                     auth: { mode: "try", strategy: "jwt" }
                 },
                 handler: async (request, h) => {
-                    let { peerId, accountId, sessionId } = request.auth.credentials
-                    let ctx = {
+                    const { peerId, accountId, sessionId } = request.auth.credentials
+                    const ctx = {
                         error:    null,
                         path:     request.params.path,
                         filename: null,
@@ -54,7 +54,7 @@ export default class BLOB {
                         return Boom.unauthorized(`failed to determine BLOB information: ${ctx.error}`)
                     if (ctx.path !== null) {
                         /*  stream content from filesystem  */
-                        let response = h.file(ctx.path, {
+                        const response = h.file(ctx.path, {
                             confine:  false,
                             filename: ctx.filename !== null ? ctx.filename : ctx.path,
                             mode:     "attachment"
@@ -66,7 +66,7 @@ export default class BLOB {
                     }
                     else if (ctx.content !== null) {
                         /*  send content from memory  */
-                        let response = h.response(ctx.content)
+                        const response = h.response(ctx.content)
                         response.code(200)
                         response.type(ctx.type !== null ? ctx.type : "application/octet-stream")
                         if (ctx.filename)

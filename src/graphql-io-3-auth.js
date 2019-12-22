@@ -59,7 +59,7 @@ export default class Auth {
                     sessionId = (new UUID(1)).format()
 
                 /*  issue new token  */
-                let jwt = this._.jwtSign({
+                const jwt = this._.jwtSign({
                     peerId:    peerId,
                     accountId: accountId,
                     sessionId: sessionId
@@ -99,7 +99,7 @@ export default class Auth {
             },
             handler: async (request, h) => {
                 /*  fetch payload  */
-                let { username, password } = request.payload
+                const { username, password } = request.payload
 
                 /*  recognize peer by id  */
                 let { id: peerId } = request.peer()
@@ -128,21 +128,21 @@ export default class Auth {
                     sessionId = (new UUID(1)).format()
 
                 /*  log request  */
-                let peer = request.peer()
-                let cid = `${peer.addr}:${peer.port}`
+                const peer = request.peer()
+                const cid = `${peer.addr}:${peer.port}`
                 this.debug(1, `Auth: login: peer=${cid}, username=${username}, ` +
                     `peerId=${peerId}, accountId=${accountId}, sessionId=${sessionId}`)
 
                 /*  issue new token  */
-                let jwt = this._.jwtSign({
+                const jwt = this._.jwtSign({
                     peerId:    peerId,
                     accountId: accountId,
                     sessionId: sessionId
                 }, "365d")
 
                 /*  send token and peer information in payload and cookie  */
-                let payload = { token: jwt, peer: peerId }
-                let response = h.response(payload)
+                const payload = { token: jwt, peer: peerId }
+                const response = h.response(payload)
                 response.code(201)
                 response.state(`${this.$.prefix}Token`, jwt, {
                     ttl:          this.$.ttl,
@@ -166,12 +166,12 @@ export default class Auth {
             },
             handler: async (request, h) => {
                 /*  log request  */
-                let peer = request.peer()
-                let cid = `${peer.addr}:${peer.port}`
+                const peer = request.peer()
+                const cid = `${peer.addr}:${peer.port}`
                 this.debug(1, `Auth: session: peer=${cid}`)
 
                 /*  fetch credentials  */
-                let ctx = {
+                const ctx = {
                     error:     null,
                     peerId:    null,
                     accountId: null,
@@ -185,10 +185,10 @@ export default class Auth {
                 await this.hook("session-details", "promise", ctx)
                 if (ctx.error !== null)
                     return Boom.unauthorized(`failed to determine session: ${ctx.error}`)
-                let { peerId, accountId, sessionId } = ctx
+                const { peerId, accountId, sessionId } = ctx
 
                 /*  pass-through information  */
-                let response = h.response({
+                const response = h.response({
                     peerId:    peerId,
                     accountId: accountId,
                     sessionId: sessionId
@@ -207,23 +207,23 @@ export default class Auth {
             },
             handler: async (request, h) => {
                 /*  log request  */
-                let peer = request.peer()
-                let cid = `${peer.addr}:${peer.port}`
+                const peer = request.peer()
+                const cid = `${peer.addr}:${peer.port}`
                 this.debug(1, `Auth: logout: peer=${cid}`)
 
                 /*  destroy session  */
                 if (   request.auth.isAuthenticated
                     && typeof request.auth.credentials === "object"
                     && request.auth.credentials !== null) {
-                    let { sessionId } = request.auth.credentials
-                    let ctx = { error: null, sessionId }
+                    const { sessionId } = request.auth.credentials
+                    const ctx = { error: null, sessionId }
                     await this.hook("session-destroy", "promise", ctx)
                     if (ctx.error !== null)
                         return Boom.unauthorized(`failed to logout: ${ctx.error}`)
                 }
 
                 /*  destroy cookie  */
-                let response = h.response()
+                const response = h.response()
                 response.code(204)
                 response.state(`${this.$.prefix}Token`, "", {
                     ttl:          0,
