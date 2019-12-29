@@ -345,10 +345,11 @@ export default class GraphQLService {
             logger: { log: (err) => { this.debug(2, `GraphQL: ERROR: ${err}`) } },
             allowUndefinedInResolve: false,
             resolverValidationOptions: {
-                requireResolversForArgs:      true,
-                requireResolversForNonScalar: true,
-                requireResolversForAllFields: false,
-                allowResolversNotInSchema:    false
+                requireResolversForArgs:        true,
+                requireResolversForNonScalar:   true,
+                requireResolversForAllFields:   false,
+                requireResolversForResolveType: false,
+                allowResolversNotInSchema:      false
             }
         })
 
