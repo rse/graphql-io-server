@@ -1,6 +1,6 @@
 {
     "name":        "graphql-io-server",
-    "version":     "1.9.1",
+    "version":     "1.9.2",
     "description": "GraphQL Network Communication Framework (Server)",
     "keywords":    [ "graphql", "network", "communication", "framework", "server" ],
     "main":        "./lib/graphql-io.js",
