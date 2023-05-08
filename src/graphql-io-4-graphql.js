@@ -123,20 +123,37 @@ export default class GraphQLService {
                 resolver[type][attr] = value
             }
         }
+
+        /*  dispatch different kind of resolver specification  */
+        const dispatchResolver = (api, type, attr) => {
+            let obj = type === "root" ? api[attr] : api[type][attr]
+            if (typeof obj === "function")
+                mixinResolver(type, attr, obj)
+            else if (typeof obj === "object" && obj instanceof Array) {
+                const [ d, r ] = obj
+                mixinSchema(type, d)
+                mixinResolver(type, attr, r)
+            }
+            else
+                throw new Error(`invalid GraphQL resolver entry under path "${type}.${attr}" ` +
+                    "(expected function or array)")
+        }
+
+        /*  iterate over list of API definitions  */
         apiResolver.forEach((api) => {
+            if (typeof api !== "object")
+                throw new Error(`invalid GraphQL API definition (expected object type)`)
             Object.keys(api).forEach((type) => {
-                Object.keys(api[type]).forEach((attr) => {
-                    if (typeof api[type][attr] === "function")
-                        mixinResolver(type, attr, api[type][attr])
-                    else if (typeof api[type][attr] === "object" && api[type][attr] instanceof Array) {
-                        const [ d, r ] = api[type][attr]
-                        mixinSchema(type, d)
-                        mixinResolver(type, attr, r)
-                    }
-                    else
-                        throw new Error(`invalid GraphQL resolver entry under path "${type}.${attr}" ` +
-                            "(expected function or array)")
-                })
+                if (typeof api[type] === "object" && !(api[type] instanceof Array)) {
+                    /*  sub-level  */
+                    Object.keys(api[type]).forEach((attr) => {
+                        dispatchResolver(api, type, attr)
+                    })
+                }
+                else {
+                    /*  root-level  */
+                    dispatchResolver(api, "root", type)
+                }
             })
         })
 
