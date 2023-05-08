@@ -126,7 +126,7 @@ export default class GraphQLService {
 
         /*  dispatch different kind of resolver specification  */
         const dispatchResolver = (api, type, attr) => {
-            let obj = type === "root" ? api[attr] : api[type][attr]
+            const obj = type === "root" ? api[attr] : api[type][attr]
             if (typeof obj === "function")
                 mixinResolver(type, attr, obj)
             else if (typeof obj === "object" && obj instanceof Array) {
@@ -142,7 +142,7 @@ export default class GraphQLService {
         /*  iterate over list of API definitions  */
         apiResolver.forEach((api) => {
             if (typeof api !== "object")
-                throw new Error(`invalid GraphQL API definition (expected object type)`)
+                throw new Error("invalid GraphQL API definition (expected object type)")
             Object.keys(api).forEach((type) => {
                 if (typeof api[type] === "object" && !(api[type] instanceof Array)) {
                     /*  sub-level  */
