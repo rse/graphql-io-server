@@ -70,7 +70,8 @@ export default class GraphQLService {
 
         /*  start with a mininum GraphQL schema and resolver  */
         let schema = ""
-        let resolver = { Root: {} }
+        let resolver = {}
+        resolver[this.$.root] = {}
 
         /*  let application extend GraphQL schema and resolver  */
         const apiSchema   = this.hook("graphql-schema",   "concat")
@@ -82,17 +83,18 @@ export default class GraphQLService {
         })
 
         /*  complete schema  */
-        if (!schema.match(/\btype\s+Root\s*\{/)) {
+        const re = new RegExp(`\\btype\\s+${this.$.root}\\s*\\{`)
+        if (!schema.match(re)) {
             schema = textframe(`
-                type Root {
+                type ${this.$.root} {
                 }
             `) + schema
         }
         if (!schema.match(/\bschema\s*\{/)) {
             schema = textframe(`
                 schema {
-                    query:    Root
-                    mutation: Root
+                    query:    ${this.$.root}
+                    mutation: ${this.$.root}
                 }
             `) + schema
         }
@@ -166,7 +168,7 @@ export default class GraphQLService {
         mixinResolver("root", "Void", GraphQLTypes.Void({ name: "Void" }))
 
         /*  mixin GraphQL server information into schema and resolver  */
-        mixinSchema("Root", "_Server: _Server")
+        mixinSchema(this.$.root, "_Server: _Server")
         mixinSchema("root", `
             #   Information about GraphQL-IO Server
             type _Server {
@@ -198,7 +200,7 @@ export default class GraphQLService {
             clients:  0
         }
         this._.kvs.put("server", server)
-        mixinResolver("Root", "_Server", (obj, args, ctx, info) => {
+        mixinResolver(this.$root, "_Server", (obj, args, ctx, info) => {
             if (ctx.scope !== null) {
                 ctx.scope.record({
                     op:       "read",
@@ -337,14 +339,14 @@ export default class GraphQLService {
         })
 
         /*  mixin GraphQL subscription into schema and resolver  */
-        mixinSchema("Root",          this._.sub.schemaSubscription())
+        mixinSchema(this.$root,      this._.sub.schemaSubscription())
         mixinSchema("root",          "type _Subscription {}")
         mixinSchema("_Subscription", this._.sub.schemaSubscriptions())
         mixinSchema("_Subscription", this._.sub.schemaSubscribe())
         mixinSchema("_Subscription", this._.sub.schemaUnsubscribe())
         mixinSchema("_Subscription", this._.sub.schemaPause())
         mixinSchema("_Subscription", this._.sub.schemaResume())
-        mixinResolver("Root",          "_Subscription", this._.sub.resolverSubscription())
+        mixinResolver(this.$.root,     "_Subscription", this._.sub.resolverSubscription())
         mixinResolver("_Subscription", "subscriptions", this._.sub.resolverSubscriptions())
         mixinResolver("_Subscription", "subscribe",     this._.sub.resolverSubscribe())
         mixinResolver("_Subscription", "unsubscribe",   this._.sub.resolverUnsubscribe())

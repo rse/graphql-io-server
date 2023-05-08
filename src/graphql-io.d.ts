@@ -89,6 +89,9 @@ declare module "graphql-io-server" {
                 which should be statically served to the client under the base URL.  */
             frontend: string
 
+            /*  The name of the GraphQL root-level element (default: Root)  */
+            root: string
+
             /*  The frame encoding for the GraphQL over WebSocket communication.
                 Has to be either `cbor` (maximum performance, binary),
                 `msgpack` (maximum performance, binary) or `json` (less performance, text, human readable).

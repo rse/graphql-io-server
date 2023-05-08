@@ -77,6 +77,7 @@ export default class Server extends StdAPI {
             keyval:       [ "string", "spm:xxx" ],
             frontend:     [ "string", "" ],
             graphiql:     [ "boolean", true ],
+            root:         [ "string", "Root" ],
             encoding:     [ "/^(?:cbor|msgpack|json)$/", "json" ],
             debug:        [ "number", 0 ],
             example:      [ "string",
