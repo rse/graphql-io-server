@@ -31,7 +31,7 @@ module.exports = function (grunt) {
     grunt.initConfig({
         eslint: {
             options: {
-                configFile: "eslint.yaml"
+                overrideConfigFile: "eslint.yaml"
             },
             "gruntfile": [ "Gruntfile.js" ],
             "graphql-io-server": [ "src/**/*.js" ]
