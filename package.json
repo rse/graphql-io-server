@@ -21,7 +21,7 @@
         "graphql":                         "14.5.8",
         "graphql-tools":                   "4.0.6",
         "graphql-tools-subscribe":         "2.2.4",
-        "graphql-tools-types":             "1.2.3",
+        "graphql-tools-types":             "1.3.2",
         "graphql-fields":                  "2.0.3",
         "@hapi/hapi":                      "18.4.0",
         "@hapi/basic":                     "5.1.1",
