@@ -200,7 +200,7 @@ export default class GraphQLService {
             clients:  0
         }
         this._.kvs.put("server", server)
-        mixinResolver(this.$root, "_Server", (obj, args, ctx, info) => {
+        mixinResolver(this.$.root, "_Server", (obj, args, ctx, info) => {
             if (ctx.scope !== null) {
                 ctx.scope.record({
                     op:       "read",
@@ -339,7 +339,7 @@ export default class GraphQLService {
         })
 
         /*  mixin GraphQL subscription into schema and resolver  */
-        mixinSchema(this.$root,      this._.sub.schemaSubscription())
+        mixinSchema(this.$.root,     this._.sub.schemaSubscription())
         mixinSchema("root",          "type _Subscription {}")
         mixinSchema("_Subscription", this._.sub.schemaSubscriptions())
         mixinSchema("_Subscription", this._.sub.schemaSubscribe())
